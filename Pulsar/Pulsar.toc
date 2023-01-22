@@ -1,0 +1,19 @@
+## Interface: 190200
+## Title: Pulsar
+## Author: Konstatin
+## Version: 1.0.1
+## SavedVariables: CMR_LOGS, CMR_CHECPOINTS, CMR_MISSIONS
+
+Script/Settings.lua
+VM/Utils.lua
+VM/Tables.g.lua
+VM/TargetManager.lua
+VM/GarrAutoSpell.fix.lua
+VM/GarrAutoSpell.lua
+VM/GarrAutoCombatant.lua
+VM/GarrAutoBoard.lua
+
+UI/LogsCollector.lua
+UI/InfoFrame.lua
+
+Pulsar.lua

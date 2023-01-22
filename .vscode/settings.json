@@ -1,0 +1,7 @@
+{
+    "lua.debug.settings.console": "integratedTerminal",
+    "lua.debug.settings.luaVersion": "5.1",
+    "Lua.diagnostics.globals": [
+        "HEIRLOOMS_CLASS_FILTER_FORMAT"
+    ]
+}
