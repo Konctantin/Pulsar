@@ -43,6 +43,12 @@ local opTabler = {
     }
 }
 
+local fieldTypes = {
+    ["duration"] = true,
+    ["exists"] = true,
+    ["count"] = true,
+};
+
 local multiTabler = {
     ['~']  = true,
     ['!~'] = true,
@@ -61,10 +67,33 @@ local function trynil(value)
     return value ~= '' and value or nil
 end
 
+function T.Condition:New()
+    local obj = {
+
+    };
+
+    self.__index = self;
+    setmetatable(obj, self);
+
+    return obj;
+end
+
+function T.Condition:Call(state)
+    return true;
+end
+
 function T:RegisterCondition(name, opts, api)
     if opts then
         if opts.type and not opTabler[opts.type] then
             error([[Bad argument opts.type (expect compare/boolean/equality)]], 2)
+        end
+
+        if type(opts.fields) == "table" then
+            for _, f in ipairs(opts.fields) do
+                if not fieldTypes[f] then
+                    error(format([[Bad field %s for %s]], f, name), 2);
+                end
+            end
         end
 
         for i, v in ipairs(parses) do
@@ -163,16 +192,18 @@ function T.Condition:ParseApi(str)
 end
 
 function T.Condition:ParseCondition(condition)
-    local non, args, op, value = condition:match('^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$')
+    -- [ target.aura(SomeSpell:123,player) ]
+    local non, args, operand, value = condition:match('^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$')
 
     T.assert(non, 'Invalid Condition: `%s` (Can`t parse)', condition)
 
-    local owner, pet, cmd, arg, petInputed, argInputed = self:ParseApi(args:trim())
+    --
+    local target, cmd, arg, petInputed, argInputed = self:ParseApi(args:trim())
 
     T.assert(cmd, 'Invalid Condition: `%s` (Can`t parse)', condition)
     T.assert(self.apis[cmd], 'Invalid Condition: `%s` (Not found cmd: `%s`)', condition, cmd)
 
-    op    = trynil(op)
+    operand = trynil(operand)
     value = trynil(value)
     non   = trynil(non)
 
@@ -180,22 +211,22 @@ function T.Condition:ParseCondition(condition)
 
     if opts.type == 'compare' or opts.type == 'equality' then
         T.assert(not non, 'Invalid Condition: `%s` (Not need non)',  condition)
-        T.assert(op,      'Invalid Condition: `%s` (Require op)',    condition)
+        T.assert(operand, 'Invalid Condition: `%s` (Require op)',    condition)
         T.assert(value,   'Invalid Condition: `%s` (Require value)', condition)
     elseif opts.type == 'boolean' then
-        T.assert(not op,    'Invalid Condition: `%s` (Not need op)',    condition)
-        T.assert(not value, 'Invalid Condition: `%s` (Not need value)', condition)
+        T.assert(not operand, 'Invalid Condition: `%s` (Not need op)',    condition)
+        T.assert(not value,   'Invalid Condition: `%s` (Not need value)', condition)
 
         value = nil
-        op    = non or '='
+        operand = non or '='
     else
         T.assert(true)
     end
 
-    T.assert(opTabler[opts.type][op], 'Invalid Condition: `%s` (Invalid op)', condition)
+    T.assert(opTabler[opts.type][operand], 'Invalid Condition: `%s` (Invalid op)', condition)
 
     if value then
-        if multiTabler[op] then
+        if multiTabler[operand] then
             local values = {strsplit(',', value)}
             value = {}
 
@@ -230,5 +261,113 @@ function T.Condition:ParseCondition(condition)
             arg = opts.argParse(owner, pet, arg)
         end
     end
-    return owner, pet, cmd, arg, op, value
+    return owner, pet, cmd, arg, operand, value
 end
+
+-- The player is in combat
+T:RegisterCondition('combat', { type = 'boolean', arg = false }, function(owner, player, target)
+    return UnitAffectingCombat("player");
+end);
+
+-- The unit exists and is dead
+T:RegisterCondition('dead', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+-- The player is dead
+T:RegisterCondition('palyer.dead', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+-- The unit exists and can be targeted by harmful spells
+T:RegisterCondition('harm', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+-- The unit exists and can be targeted by helpful spells
+T:RegisterCondition('help', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+-- Self-explanatory
+T:RegisterCondition('stealth', { type = 'boolean', arg = false }, function(owner, player, target)
+    return IsStealthed()
+end);
+
+-- Unreliable in Wintergrasp
+T:RegisterCondition('flyable', { type = 'boolean', arg = false }, function(owner, player, target)
+    return IsFlyableArea();
+end);
+
+-- Mounted or flight form, and in the air
+T:RegisterCondition('flying', { type = 'boolean', arg = false }, function(owner, player, target)
+    return IsFlying();
+end);
+
+
+-- Self-explanatory
+T:RegisterCondition('mounted', { type = 'boolean', arg = false }, function(owner, player, target)
+    return IsMounted();
+end);
+
+T:RegisterCondition('move', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('party', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('party', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('interrupt', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('dispell', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('raid', { type = 'boolean', arg = false }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('pause', { type = 'boolean', arg = false }, function(owner, player, target)
+    return not GetCurrentKeyBoardFocus() and IsLeftAltKeyDown();
+end);
+
+-- Refer to GetShapeshiftForm for possible values
+T:RegisterCondition('form', { type = 'compare', arg = true }, function(owner, player, target)
+    return false;
+end);
+
+-- Refer to GetShapeshiftForm for possible values
+T:RegisterCondition('stance', { type = 'compare', arg = true }, function(owner, player, target)
+    return false;
+end);
+
+T:RegisterCondition('target.hp', { type = 'compare', arg = false }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);
+
+T:RegisterCondition('target.hpp', { type = 'compare', arg = false }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);
+
+T:RegisterCondition('player.hp', { type = 'compare', arg = false }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);
+
+T:RegisterCondition('player.hpp', { type = 'compare', arg = false }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);
+
+T:RegisterCondition('target.hpmax', { type = 'compare', arg = false }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);
+
+T:RegisterCondition('target.aura', { type = 'compare', arg = false, fields = {"duration","exists","count"} }, function(owner, player, target)
+    --return C_PetBattles.GetHealth(owner, pet)
+end);

@@ -1,24 +1,51 @@
 local T = { Name = "Pulsar tester" };
 
 loadfile('FakeApi.lua')(T.Name, T);
+loadfile('FakeWowDB.lua')(T.Name, T);
 
-loadfile('Pulsar/Script/Util.lua')(T.Name, T);
-loadfile('Pulsar/Script/Stack.lua')(T.Name, T);
-
+loadfile('Pulsar/Script/Utils.lua')(T.Name, T);
 loadfile('Pulsar/Script/Action.lua')(T.Name, T);
 loadfile('Pulsar/Script/Condition.lua')(T.Name, T);
-loadfile('Pulsar/Script/Director.lua')(T.Name, T);
+loadfile('Pulsar/Script/Script.lua')(T.Name, T);
 
-loadfile('Pulsar/Script/Actions.lua')(T.Name, T);
-loadfile('Pulsar/Script/Conditions.lua')(T.Name, T);
+loadfile('Pulsar/Model/SpellInfo.lua')(T.Name, T);
+loadfile('Pulsar/Model/ItemInfo.lua')(T.Name, T);
+loadfile('Pulsar/Model/MacroInfo.lua')(T.Name, T);
+loadfile('Pulsar/Model/PlayerInfo.lua')(T.Name, T);
+loadfile('Pulsar/Model/TargetInfo.lua')(T.Name, T);
+loadfile('Pulsar/Model/State.lua')(T.Name, T);
 
-local action, condition = string.match("cast(Lol:123) [!dead & duration>2]", '^/?(.+)%s+%[(.+)%]$')
+loadfile('Pulsar/KeyMap.lua')(T.Name, T);
 
-local non, args, op, value = string.match("!duration", '^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$');
-print(non, args, op, value)
+function Create()
+    local obj = { Name = "46" };
 
-local dir = T.Director:New();
+    obj.Test = function(self)
+        print(self.Name)
+    end
 
-dir:BuildScript("cast(Lol:123) [!dead]");
+    return obj;
+end
 
-T.assert(1, 'sd')
+local s = Create();
+s:Test();
+
+local code = [[
+exit [dead]
+exit [!combat]
+spell(Moonfire:8921) [target.aura.duration(Sunfire:321) < 2]
+macro(My Macro:1) [move]
+item(My Item:321) [move]
+spell(Moonfire:8921) [move & !aoe]
+spell(Sunfire:51723) [move]
+]];
+
+local script = T.Script:New(code);
+
+script:Parse();
+
+local state = T.State:New(script.Actions);
+state:Update();
+
+script:Test(state);
+

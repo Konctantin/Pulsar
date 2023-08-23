@@ -2,18 +2,23 @@
 ## Title: Pulsar
 ## Author: Konstatin
 ## Version: 1.0.1
-## SavedVariables: CMR_LOGS, CMR_CHECPOINTS, CMR_MISSIONS
+## SavedVariables: PULSAR_GLOBAL_STORAGE
 
-Script/Settings.lua
-VM/Utils.lua
-VM/Tables.g.lua
-VM/TargetManager.lua
-VM/GarrAutoSpell.fix.lua
-VM/GarrAutoSpell.lua
-VM/GarrAutoCombatant.lua
-VM/GarrAutoBoard.lua
+Script/Utils.lua
+Script/Condition.lua
+Script/Action.lua
+Script/Script.lua
 
-UI/LogsCollector.lua
-UI/InfoFrame.lua
+Model/SpellInfo.lua
+Model/ItemInfo.lua
+Model/MacroInfo.lua
+Model/PlayerInfo.lua
+Model/TargetInfo.lua
+Model/State.lua
 
+UI/RotationEditor.lua
+UI/AbilityMonitor.lua
+UI/ControlPanel.lua
+
+KeyMap.lua
 Pulsar.lua

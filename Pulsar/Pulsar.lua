@@ -1,84 +1,107 @@
 local _, T = ...;
 _G[_] = T;
 
-local function CheckAllSpells()
+-- Init storage
+if not PULSAR_GLOBAL_STORAGE then
+    PULSAR_GLOBAL_STORAGE = { };
 end
 
-local function LoadRotation()
-    local classDisplayName, classMnkd = UnitClass("player");
-    local rotationName = "BOMBER_"..classMnkd.."_"..tostring(GetSpecialization());
-    T.AbilityList = _G[rotationName];
+for c = 1, GetNumClasses() do
+    local _, classFile, classID = GetClassInfo(c);
+    if not PULSAR_GLOBAL_STORAGE[classFile] then
+        PULSAR_GLOBAL_STORAGE[classFile] = { };
+    end
 
-    BOMBER_AOE = false;
-    BOMBER_COOLDOWN = true;
-    BOMBER_PAUSE = false;
-    T.RangeSpellBookId = nil;
-    T.RangeSpellBookType = nil;
+    local numSpecializations = GetNumSpecializationsForClassID(classID);
+    --print(numSpecializations)
+    for s = 1, numSpecializations do
+        local specId, specName, _, _, role = GetSpecializationInfoForClassID(c, s);
+        --print(specId, specName)
+        if not PULSAR_GLOBAL_STORAGE[classFile][specId] then
+            --print("ADD", classID, classFile, specId, specName, role)
+            PULSAR_GLOBAL_STORAGE[classFile][specId] = {
+                Info = {
+                    Id        = s,
+                    SpecId    = specId,
+                    ClassId   = c,
+                    ClassFile = classFile,
+                    SpecName  = specName,
+                    Role      = role,
+                },
+                Code = "",
+            };
+        end
+    end
+end
 
-    if type(T.AbilityList) == "table" and #T.AbilityList > 0 and UnitLevel("player") >= 10 then
-        --for _, ability in ipairs(BomberFrame.AbilityList) do
-        --    setmetatable(ability, BOMBER_ABILITY);
-        --end
+function T.LoadCurrentRotation()
+    local classDisplayName, classFile = UnitClass("player");
 
-        --if type(BomberFrame.AbilityList.OnLoad) == "function" then
-        --    BomberFrame.AbilityList.OnLoad();
-        --end
+    local classStorage = PULSAR_GLOBAL_STORAGE[classFile];
+    if not classStorage then
+        print("There is no any roatations for "..classDisplayName);
+        return;
+    end
 
-        local classColorStr = RAID_CLASS_COLORS[classMnkd].colorStr;
+    local specId, specName = GetSpecializationInfo(GetSpecialization());
+    local rotationInfo = classStorage[specId];
+    if not rotationInfo then
+        print("There is no any roatations for "..classDisplayName.." - "..specName);
+        return;
+    end
+
+    T.ScriptIntance = nil;
+    if tostring(rotationInfo.Code) ~= "" then
+        T.ScriptIntance = T.Script:New(rotationInfo.Code);
+        T.ScriptIntance:Parse();
+        T.ScriptIntance:Test();
+
+        --print(format("Rotation %s - %s has been loaded!", classDisplayName, specName));
+
+        local classColorStr = RAID_CLASS_COLORS[classFile].colorStr;
         local classColoredText = HEIRLOOMS_CLASS_FILTER_FORMAT:format(classColorStr, classDisplayName);
 
-        local spec = select(2, GetSpecializationInfo(GetSpecialization()));
-        --BomberFrameInfo.print("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..spec.."|r|cff15bd05 is enabled.|r", true);
-        CheckAllSpells();
+        print("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..specName.."|r|cff15bd05 is enabled.|r", true)
+
+        T.StateInfo = T.State:New(T.ScriptIntance);
+        T.StateInfo:Update();
+
+        T.ScriptIntance:Run(T.StateInfo);
     end
 end
 
 local function SetTargetCastintInfo(spellId, guid, castTime)
-    if type(T.AbilityList) == "table" then
+    if type(T.StateInfo) == "table" and type(T.StateInfo.Spells) == "table" then
         local dstGuid = guid and guid or T.LastTarget;
-        for _, ability in ipairs(T.AbilityList) do
-            if type(ability) == "table" and ability.Target then
-                if spellId == ability.SpellId and (not guid or (UnitGUID(ability.Target) == dstGuid)) then
-                    ability.Guid = guid;
-                    ability.LastCastingTime = castTime;
+        for _, spell in ipairs(T.StateInfo.Spells) do
+            if type(spell) == "table" and spell.Target then
+                if spellId == spell.Id and (not guid or (UnitGUID(spell.Target) == dstGuid)) then
+                    spell.LastGuid = guid;
+                    spell.LastTime = castTime;
                 end
             end
         end
     end
 end
 
-local function AddonFrame_AbilityLoop()
-    if type(T.AbilityList) == "table" then
-        if not T.AbilityList.OnTackt or T.AbilityList.OnTackt() then
-            for _, ability in ipairs(T.AbilityList) do
-                if type(ability) == "table" and not ability.Failed then
-                    if not ability.IsDisable then
-                        --if ability.SpellId > 0 then
-                        --    CheckKnownAbility(ability)
-                        --end
-                        --local trace = false--ability.SpellId == 162794;
-                        --if CheckAndCastAbility(ability, trace) then
-                        --    return;
-                        --end
-                    end
-                end
-            end
-        end
-    end
-end
-
-local function mainFrame_OnEvent(self, event, ...)
+local function pulsarFrame_OnEvent(self, event, ...)
     if event == "PLAYER_ENTERING_WORLD" then
         self:Show();
-        LoadRotation();
+        T.CreateControlPanel();
+        T.ControlPanel:Show();
+        T.LoadCurrentRotation();
+    elseif event == "PLAYER_LEAVING_WORLD" then
+        --if T.ControlPanel then
+        --    T.ControlPanel:Hide();
+        --end
     elseif event == "SPELLS_CHANGED" then
-        CheckAllSpells();
+        --CheckAllSpells();
     elseif event == "LEARNED_SPELL_IN_TAB" then
-        CheckAllSpells();
+        --CheckAllSpells();
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
         local unit = ...;
         if UnitIsUnit(unit, "player") then
-            LoadRotation();
+            T.LoadCurrentRotation();
         end
     elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
         local _,subEvent,_,sourceGUID,_,_,_,destGUID,_,_,_,spellId = CombatLogGetCurrentEventInfo();
@@ -108,63 +131,37 @@ local function mainFrame_OnEvent(self, event, ...)
     end
 end
 
-local function mainFrame_OnUpdate(self, elapsed)
+local function pulsarFrame_OnUpdate(self, elapsed)
     self.timer = (self.timer or 0) + elapsed;
-    if self.timer > 0.15 then
-        T.SetColor(nil);
-        T.ping = select(4, GetNetStats()) / 1000;
-        -- PlayerInfo:Init();
-        -- TargetInfo:Init();
-
-        -- local bookId, bookType = GetSpellBookId(BomberFrame.RangeSpellId);
-        -- BomberFrame.RangeSpellBookId = bookId;
-        -- BomberFrame.RangeSpellBookType = bookType;
-
-        if not GetCurrentKeyBoardFocus() and not T.IsPause and not IsModKeyDown(mkLeftAlt) then
-            if C_PetBattles.IsInBattle() then
-                --if tdBattlePetScriptAutoButton and tdBattlePetScriptAutoButton:IsEnabled() then
-                --    local hotKey = string.upper(tostring(tdBattlePetScriptAutoButton.HotKey:GetText()));
-                --    local color = BOMBER_KEYMAP[hotKey]
-                --    BomberFrame_SetColor(color);
-                --end
-            else
-                AddonFrame_AbilityLoop();
-
-                --if UltraSquirt
-                --and UltraSquirt.db
-                --and UltraSquirt.db.global
-                --and UltraSquirt.db.global.KEYBIND
-                --and UltraSquirt.USQFrame
-                --and UltraSquirt.USQFrame:IsShown()
-                --and UnitLevel("player") < 70
-                --then
-                --    local color = BOMBER_KEYMAP[UltraSquirt.db.global.KEYBIND]
-                --    BomberFrame_SetColor(color);
-                --end
-            end
-        end
-        self.timer = 0;
-    end
+    --if self.timer > 0.15 then
+    --    if type(T.ScriptIntance) = "table" then
+    --        T.SetColor(nil);
+    --        T.StateInfo:Update();
+    --        T.ScriptIntance:Run(T.StateInfo);
+    --    end
+    --    self.timer = 0;
+    --end
 end
 
-local mainFrame = CreateFrame("Frame");
+local pulsarFrame = CreateFrame("Frame");
 
-mainFrame:SetFrameStrata("BACKGROUND");
-mainFrame:SetWidth(5);
-mainFrame:SetHeight(5);
-mainFrame:SetPoint("BOTTOMLEFT", "UIParent");
-mainFrame.texture = mainFrame:CreateTexture(nil, "BACKGROUND");
-mainFrame.texture:SetAllPoints(true);
-mainFrame.texture:SetColorTexture(1.0, 0.5, 0.0, 1);
+pulsarFrame:SetFrameStrata("BACKGROUND");
+pulsarFrame:SetWidth(5);
+pulsarFrame:SetHeight(5);
+pulsarFrame:SetPoint("BOTTOMLEFT", "UIParent");
+pulsarFrame.Texture = pulsarFrame:CreateTexture(nil, "BACKGROUND");
+pulsarFrame.Texture:SetAllPoints(true);
+pulsarFrame.Texture:SetColorTexture(1.0, 0.5, 0.0, 1);
 
-mainFrame:SetScript("OnUpdate", mainFrame_OnUpdate);
-mainFrame:SetScript("OnEvent",  mainFrame_OnEvent);
-mainFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-mainFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
-mainFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
-mainFrame:RegisterEvent("MODIFIER_STATE_CHANGED");
-mainFrame:RegisterEvent("LEARNED_SPELL_IN_TAB");
-mainFrame:Show();
+pulsarFrame:SetScript("OnUpdate", pulsarFrame_OnUpdate);
+pulsarFrame:SetScript("OnEvent",  pulsarFrame_OnEvent);
+pulsarFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+pulsarFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+pulsarFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
+pulsarFrame:RegisterEvent("MODIFIER_STATE_CHANGED");
+pulsarFrame:RegisterEvent("LEARNED_SPELL_IN_TAB");
+pulsarFrame:RegisterEvent("PLAYER_LEAVING_WORLD");
+pulsarFrame:Show();
 
 local infoFrame = CreateFrame("Frame");
 infoFrame:SetScript("OnUpdate", function (self, elapsed)
@@ -186,8 +183,8 @@ infoFrame:Show();
 
 function T.SetColor(color)
     local cc = color or {};
-    mainFrame.texture:SetColorTexture(cc.R or 0, cc.G or 0, cc.B or 0, 1);
+    pulsarFrame.Texture:SetColorTexture(cc.R or 0, cc.G or 0, cc.B or 0, 1);
 end
 
-T.MainFrame = mainFrame;
+T.PulsarFrame = pulsarFrame;
 T.InfoFrame = infoFrame;

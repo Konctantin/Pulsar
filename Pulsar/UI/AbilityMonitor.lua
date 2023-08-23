@@ -166,7 +166,7 @@ function T.CreateControlPanel()
 
     frame.EditorButton = CreateIconButton("EditorButton", frame, SIZE, 4548873, "Open rotation editor");
     frame.EditorButton:SetPoint("LEFT", leftPos, 0);
-    frame.EditorButton:SetScript("OnClick", function(self) T.ShowRotationEditor(); end);
+    frame.EditorButton:SetScript("OnClick", function(self) print("EditorButton"); end);
     leftPos = leftPos + SIZE;
 
     frame.MonitorButton = CreateIconButton("MonitorButton", frame, SIZE, 3717417, "Open ability monitor");
@@ -183,3 +183,87 @@ function T.SetCurrentIcon(icon)
         T.ControlPanel.icon:SetTexture(icon);
     end
 end
+
+--end;
+--CreateBorder(CopyChat, 12, 1, 1, 1)
+
+--local b = CreateFrame("Button", "MyButton", UIParent, "UIPanelButtonTemplate")
+--b:SetSize(80 ,22) -- width, height
+--b:SetText("Button!")
+--b:SetPoint("CENTER")
+--b:SetScript("OnClick", function()
+--    print("I'm in your buttonz")
+--end)
+
+--local controlPanel = CreateFrame("Frame");
+--[[
+local frame = CreateFrame("Frame", "SimpleScrollFrameTableDemo", UIParent, "BasicFrameTemplateWithInset");
+
+
+frame:SetSize(500, 600);
+frame:SetPoint("CENTER");
+frame:SetMovable(true);
+frame:SetResizable(true);
+frame:SetScript("OnMouseDown", frame.StartMoving);
+frame:SetScript("OnMouseUp", frame.StopMovingOrSizing);
+
+local resizeButton = CreateFrame("Button", nil, frame);
+resizeButton:SetSize(16, 16);
+resizeButton:SetPoint("BOTTOMRIGHT");
+resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up");
+resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight");
+resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down");
+resizeButton:SetScript("OnMouseDown", function(self, button)
+    frame:StartSizing("BOTTOMRIGHT");
+    frame:SetUserPlaced(true);
+end);
+resizeButton:SetScript("OnMouseUp", function(self, button)
+    frame:StopMovingOrSizing();
+end);
+
+local CopyChatBox = CreateFrame('EditBox', 'nChatCopyBox', frame)
+CopyChatBox:SetMultiLine(true)
+CopyChatBox:SetAutoFocus(true)
+CopyChatBox:EnableMouse(true)
+CopyChatBox:SetMaxLetters(99999)
+CopyChatBox:SetFont('Fonts\\ARIALN.ttf', 15, 'THINOUTLINE')
+CopyChatBox:SetWidth(590)
+CopyChatBox:SetHeight(590)
+CopyChatBox:SetScript('OnTextChanged', function()
+    local _, classFile = UnitClass("player");
+    local specId = GetSpecializationInfo(GetSpecialization());
+    PULSAR_GLOBAL_STORAGE[classFile][specId].Code = CopyChatBox:GetText();
+    --print(CopyChatBox:GetText())
+end);
+--CopyChatBox:SetScript('OnSizeChanged', function(s,w,h)
+--    CopyChatBox:SetWidth(w);
+--    CopyChatBox:SetHeight(h);
+--end);
+
+local Scroll = CreateFrame('ScrollFrame', 'nChatCopyScroll', frame, 'UIPanelScrollFrameTemplate')
+Scroll:SetPoint('TOPLEFT', frame, 'TOPLEFT', 8, -30)
+Scroll:SetPoint('BOTTOMRIGHT', frame, 'BOTTOMRIGHT', -30, 8)
+Scroll:SetScrollChild(CopyChatBox)
+
+frame:Hide();
+
+frame:SetScript("OnEvent",
+    function(_, event, ...)
+
+    end);
+frame:Hide();
+
+SLASH_PCODE1 = "/pcode"
+SlashCmdList["PCODE"] = function(msg)
+    if frame:IsVisible() then
+        frame:Hide();
+    else
+        local _, classFile = UnitClass("player");
+        local specId = GetSpecializationInfo(GetSpecialization());
+        CopyChatBox:SetText(PULSAR_GLOBAL_STORAGE[classFile][specId].Code);
+        frame:Show();
+    end
+end
+
+T.CodeFrame = frame;
+]]

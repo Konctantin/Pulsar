@@ -2,45 +2,101 @@ local _, T = ...;
 
 T.Action = { apis = {} };
 
-function T:RegisterAction(...)
-    local last = select('#', ...);
-    local method = select(last, ...);
+function T.Action.RegisterAction(name, method)
+    --print(format("add action |%s|", name))
+    T.Action.apis[name] = method;
+end
 
-    if last < 2 or type(method) ~= 'function' then
-        error('Usage: :RegisterAction(name, [name2, ...], method)');
+-- NEW
+
+function T.Action:New(name, params)
+    local command = T.Action.apis[name];
+    --print(format("|%s|", name), params, "=", command)
+    T.assert(command~=nil, "Unregistered action "..name);
+
+    local obj = {
+        Name    = name;
+        Params  = params;
+        Command = command;
+        Conditions = {};
+    };
+
+    self.__index = self;
+    setmetatable(obj, self);
+
+    return obj;
+end
+
+function T.Action:AddCondition(condition)
+    table.insert(self.Conditions, condition);
+end
+
+function T.Action:Call(state)
+    local result = self.Command(state, self.Params);
+
+    for i, condition in ipairs(self.Conditions) do
+        local check = condition:Call(state);
+        if not check then
+            return false;
+        end
     end
 
-    for i = 1, last - 1 do
-        T.Action.apis[select(i, ...)] = method;
-    end
+    return result;
 end
 
-function T:CallAction(action, run)
-    local cmd, value = self:ParseAction(action)
+-----------------------------------------------
+--               REGISTRATION                --
+-----------------------------------------------
 
-    local fn = self.apis[cmd]
-    return fn and ((value ~= nil and fn(value, run)) or (value == nil and fn(run)))
-end
+-- Just test function
+T.Action.RegisterAction('test', function(state, arg)
+    print(state, arg)
+    return false;
+end);
+    
+-- Cast spell function
+-- spell(Spell:123) [player.aura.exists(Aura:456988)]
+-- spell(Spell:123) [target.aura.duration(Aura:4569) < 3]
+-- spell(Spell:123) [target.aura.count(Aura:4569) < 3]
+-- spell(Spell:123) [form=cat & target.aura(Aura:4569).duration < 3]
+T.Action.RegisterAction('spell', function(state, arg)
+    print("spell", state, arg);
+    return true
+end);
 
-function T:Run(action)
-    return self:CallAction(action, true)
-end
+-- Use item function
+-- item(Item:12334) [player.hpp < 30]
+T.Action.RegisterAction('item', function(state, arg)
+    print("item", state, arg);
+    return true
+end);
 
-function T:Test(action)
-    return self:CallAction(action, false)
-end
+-- Use item function
+-- macro(My Macro:12) [player.hpp < 30]
+T.Action.RegisterAction('macro', function(state, arg)
+    print("macro", state, arg);
+    return true
+end);
 
-function T:ParseAction(action)
-    T.assert(type(action) == 'string', 'Invalid Action: `%s`', action)
+-- break abilities priority
+-- exit [!combat]
+-- exit [stealth]
+T.Action.RegisterAction("return", function(state, arg)
+    print("return", state, arg);
+    return true;
+end);
 
-    if action:find('^%-%-') then
-        return '--', action
-    end
+T.Action.RegisterAction("quit", function(state, arg)
+    print("quit", state, arg);
+    return true;
+end);
 
-    local cmd, value = T.ParseQuote(action)
+T.Action.RegisterAction("exit", function(state, arg)
+    print("exit", state, arg);
+    return true;
+end);
 
-    T.assert(cmd, 'Invalid Action: `%s`', action)
-    T.assert(self.apis[cmd], 'Invalid Action: `%s` (Not found command)', action)
-
-    return cmd, value ~= '' and value or nil
-end
+-- just comment
+T.Action.RegisterAction('--', function(state, arg)
+    return false;
+end);
