@@ -88,6 +88,8 @@ function Script:Parse()
 
             if line:find('^%-%-') then
                 actionPart = line
+            --elseif line:find('^#') then
+            --    local presetup = line;
             elseif line:find('[', nil, true) then
                 actionPart, conditionPart = string.match(line, '^/?(.+)%s*%[(.+)%]$');
             else

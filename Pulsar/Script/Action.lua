@@ -82,17 +82,17 @@ end);
 -- exit [!combat]
 -- exit [stealth]
 T.Action.RegisterAction("return", function(state, arg)
-    print("return", state, arg);
+    --print("return", state, arg);
     return true;
 end);
 
 T.Action.RegisterAction("quit", function(state, arg)
-    print("quit", state, arg);
+    --print("quit", state, arg);
     return true;
 end);
 
 T.Action.RegisterAction("exit", function(state, arg)
-    print("exit", state, arg);
+    --print("exit", state, arg);
     return true;
 end);
 

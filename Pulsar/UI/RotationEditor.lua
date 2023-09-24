@@ -34,7 +34,7 @@ local function CreateSimpleButton(name, width, parent, title, tooltip)
         GameTooltip_AddNormalLine(GameTooltip, self.Tooltip or "");
         GameTooltip:Show();
     end);
-    button:SetScript('OnLeave', function (self)
+    button:SetScript('OnLeave', function(self)
         GameTooltip_Hide();
     end);
 
@@ -42,12 +42,49 @@ local function CreateSimpleButton(name, width, parent, title, tooltip)
     return button;
 end
 
+local multilineInput do
+	--local function onNavigate(self, _x,y, _w,h)
+	--	local scroller = self.scroll
+	--	local occH, occP, y = scroller:GetHeight(), scroller:GetVerticalScroll(), -y
+	--	if occP > y then
+	--		occP = y -- too far
+	--	elseif (occP + occH) < (y+h) then
+	--		occP = y+h-occH -- not far enough
+	--	else
+	--		return
+	--	end
+	--	scroller:SetVerticalScroll(occP)
+	--	local _, mx = scroller.ScrollBar:GetMinMaxValues()
+	--	scroller.ScrollBar:SetMinMaxValues(0, occP < mx and mx or occP)
+	--	scroller.ScrollBar:SetValue(occP)
+	--end
+	function multilineInput(name, parent, width)
+        local scroller = CreateFrame("ScrollFrame", name .. "Scroll", parent, "UIPanelScrollFrameTemplate");
+        local input = CreateFrame("Editbox", name, scroller);
+        input:SetWidth(width-12);
+        input:SetMultiLine(true);
+        input:SetAutoFocus(false);
+        input:SetTextInsets(2,4,0,2);
+        input:SetFontObject(GameFontHighlight);
+        --input:SetScript("OnCursorChanged", onNavigate);
+        input:SetScript("OnEscapePressed", input.ClearFocus);
+        --input:SetScript("OnTabPressed", shiftInputFocus);
+        scroller:EnableMouse(1);
+        scroller:SetScript("OnMouseDown", function(self) self.input:SetFocus() end);
+        scroller:SetScrollChild(input)
+        input.scroll = scroller;
+        scroller.input = input;
+
+		return input, scroller
+	end
+end
+
 local function CreateEditor(specButton, frame)
     local X_Offset = 200;
     local Y_Offset = 50;
-    
+
     local editPanel = CreateFrame("Frame", "RotationEditorEditPanel", frame, "BackdropTemplate");
-    
+
     editPanel:SetWidth(frame:GetWidth()-X_Offset-10);
     editPanel:SetHeight(frame:GetHeight()-Y_Offset-10);
     editPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", X_Offset, -Y_Offset);
@@ -56,16 +93,18 @@ local function CreateEditor(specButton, frame)
         bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
         tile = true,
     });
-    
+
     local editor = CreateFrame('EditBox', 'RotationEditorEditBox', editPanel);
     editor:SetMultiLine(true);
-    editor:SetAutoFocus(true);
+    editor:SetAutoFocus(false);
     editor:EnableMouse(true);
     editor:SetMaxLetters(99999);
-    editor:SetFont('Fonts\\ARIALN.ttf', 15, 'THINOUTLINE');
+    editor:SetTextInsets(2,4,0,2);
+    editor:SetFontObject(GameFontHighlight);
     editor:SetPoint("TOPLEFT", editPanel, "TOPLEFT", 0, -30);
     editor:SetWidth(editPanel:GetWidth()-30);
     editor:SetHeight(editPanel:GetHeight()-30);
+    editor:SetScript("OnEscapePressed", editor.ClearFocus);
     editor:SetScript('OnTextChanged', function(self)
         T.SaveButton:SetEnabled(true);
     end);
@@ -73,10 +112,45 @@ local function CreateEditor(specButton, frame)
     local scroll = CreateFrame('ScrollFrame', 'RotationEditorEditBoxScroll', editPanel, 'UIPanelScrollFrameTemplate');
     scroll:SetPoint('TOPLEFT', editPanel, 'TOPLEFT', 8, -8);
     scroll:SetPoint('BOTTOMRIGHT', editPanel, 'BOTTOMRIGHT', -30, 8);
+    scroll:SetScript("OnMouseDown", function(self) self.editor:SetFocus() end);
+    scroll:EnableMouse(1);
     scroll:SetScrollChild(editor);
-
+    scroll.editor = editor;
     editPanel:Hide();
-    
+
+    local name = "";
+    local width = 400;
+
+    --local scroller = CreateFrame("ScrollFrame", name .. "Scroll", frame, "UIPanelScrollFrameTemplate");
+    --local input = CreateFrame("Editbox", name, scroller);
+    --input:SetWidth(width-12);
+    --input:SetMultiLine(true);
+    --input:SetAutoFocus(false);
+    --input:SetTextInsets(2,4,0,2);
+    --input:SetFontObject(GameFontHighlight);
+    ----input:SetScript("OnCursorChanged", onNavigate);
+    --input:SetScript("OnEscapePressed", input.ClearFocus);
+    ----input:SetScript("OnTabPressed", shiftInputFocus);
+    --scroller:EnableMouse(1);
+    --scroller:SetScript("OnMouseDown", function(self) self.input:SetFocus() end);
+    --scroller:SetScrollChild(input);
+    --scroller:SetPoint("TOPLEFT", 30, -200);
+    --scroller:SetPoint("BOTTOMRIGHT", -170, 34)
+    --input.scroll = scroller;
+    --scroller.input = input;
+
+
+    --local ebox, scr = multilineInput("M6EditBox", editPanel, mainPanel:GetWidth()-34) do
+    --    scr:SetPoint("TOPLEFT", 6, -73)
+    --    scr:SetPoint("BOTTOMRIGHT", -30, 34)
+    --    local oc = CreateFrame("Frame", nil, scr)
+    --    SetBackdrop(oc, {edgeFile="Interface/Tooltips/UI-Tooltip-Border", bgFile="Interface/DialogFrame/UI-DialogBox-Background-Dark", tile=true, edgeSize=16, tileSize=16, insets={left=4,right=4,bottom=4,top=4}})
+    --    oc:SetPoint("TOPLEFT", -3, 5)
+    --    oc:SetPoint("BOTTOMRIGHT", 26, -4)
+    --    oc:SetFrameLevel(scr:GetFrameLevel()-1)
+    --    editPanel.box = ebox
+    --end
+
     specButton.Scroll = scroll;
     specButton.Editor = editor;
     specButton.EditPanel = editPanel;
@@ -85,78 +159,88 @@ end
 local function CreateSpecButtons(classID, classButton, frame)
     classButton.SpecButtons = {};
 
-    --print(numSpecializations)
+    local ICON_SIZE = 25;
     local X_Offset = 210;
     for s = 1, GetNumSpecializationsForClassID(classID) do
-        local specId, specName, description, icon, role = GetSpecializationInfoForClassID(classID, s);
-        --print(specId, specName, icon, role)
+        local specId, specName, description, specIcon, specRole = GetSpecializationInfoForClassID(classID, s);
+        --print(specId, specName, specIcon, specRole)
         local button = CreateFrame("Button", classButton:GetName().."_"..tostring(specId), frame);
-        button:SetSize(25, 25);
-        button:SetPoint("TOPLEFT", X_Offset, -25);
-        
+        button:SetSize(ICON_SIZE, ICON_SIZE);
+        button:SetPoint("TOPLEFT", X_Offset, -ICON_SIZE);
+
         button:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square");
         button:GetHighlightTexture():SetBlendMode("ADD");
 
         button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress");
         button:GetPushedTexture():SetDrawLayer("OVERLAY");
-        
-        button.icon = button:CreateTexture("", "BACKGROUND");
-        button.icon:SetWidth(25);
-        button.icon:SetHeight(25);
-        button.icon:SetPoint("LEFT");
-        button.icon:SetTexture(icon);
-        
+
+        button.IconSpec = button:CreateTexture("", "BACKGROUND");
+        button.IconSpec:SetWidth(ICON_SIZE);
+        button.IconSpec:SetHeight(ICON_SIZE);
+        button.IconSpec:SetPoint("LEFT");
+        button.IconSpec:SetTexture(specIcon);
+
+        button.ToolTipHeader = CreateFrame("Frame", button:GetName().."_ToolTipHeader", button);
+        button.ToolTipHeader:SetSize(ICON_SIZE, ICON_SIZE);
+        button.ToolTipHeader.Icon = button.ToolTipHeader:CreateTexture("", "BACKGROUND");
+        button.ToolTipHeader.Icon:SetSize(ICON_SIZE, ICON_SIZE);
+        button.ToolTipHeader.Icon:SetPoint("LEFT");
+        button.ToolTipHeader.Icon:SetAtlas(GetMicroIconForRole(specRole), TextureKitConstants.IgnoreAtlasSize);
+
+        button.ToolTipHeader.Text = button.ToolTipHeader:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+        button.ToolTipHeader.Text:SetPoint("LEFT", ICON_SIZE, 0);
+        button.ToolTipHeader.Text:SetText("|cff00ff00 "..specName.."|r");
+
+        button.ClassButton = classButton;
         button.ClassId = classButton.ClassId;
         button.ClassFile = classButton.ClassFile;
         button.SpecId = specId;
         button.SpecName = specName;
         button.Description = description;
-        button.Role = role;
+        button.SpecRole = specRole;
 
         button:SetScript('OnEnter', function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOPLEFT");
             GameTooltip:SetPoint("TOPLEFT", self, "BOTTOMRIGHT", 0, 0);
-            GameTooltip_AddNormalLine(GameTooltip, self.SpecName);
-            GameTooltip_AddBlankLineToTooltip(GameTooltip);
-            GameTooltip_AddNormalLine(GameTooltip, self.Role);
-            GameTooltip_AddBlankLineToTooltip(GameTooltip);
+            GameTooltip_InsertFrame(GameTooltip, self.ToolTipHeader);
             GameTooltip_AddNormalLine(GameTooltip, self.Description);
             GameTooltip:Show();
         end);
-        
+
         button:SetScript('OnLeave', function (self)
             GameTooltip_Hide();
         end);
-        
+
         button:SetScript('OnClick', function (self)
             T.SelectEditor(self.ClassId, self.SpecId);
+            self.ClassButton.LastSpec = self.SpecId;
         end);
-        
+
         CreateEditor(button, frame);
-        
+
         button:Hide();
-        
+
         classButton.SpecButtons[specId] = button;
         X_Offset = X_Offset + button:GetWidth() + 10;
     end
 end
 
-local function CreateClassList(parent, frame)  
+local function CreateClassList(parent, frame)
     local Y_Offset = 0;
     T.ClassButtons = {};
-    
-    for c = 1, GetNumClasses() do
-        local className, classFile, classID = GetClassInfo(c);
-        
+
+    for classIndex = 1, GetNumClasses() do
+        local className, classFile, classID = GetClassInfo(classIndex);
+
         local button = CreateFrame("Button", classFile.."_ClassButton", parent);
         button:SetSize(parent:GetWidth()-20, 25);
         button:SetPoint("TOPLEFT", 0, -Y_Offset);
-        
+
         button:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square");
         button:GetHighlightTexture():SetBlendMode("ADD");
         button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress");
         button:GetPushedTexture():SetDrawLayer("OVERLAY");
-        
+
         button.icon = button:CreateTexture("", "BACKGROUND");
         button.icon:SetWidth(25);
         button.icon:SetHeight(25);
@@ -166,24 +250,25 @@ local function CreateClassList(parent, frame)
         button.name = button:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
         button.name:SetPoint("LEFT", 35, 0);
         button.name:SetText(GetColoredClass(classID));
-        
+
         button.ClassFile = classFile;
         button.ClassId = classID;
-        
+        button.LastSpec = nil;
+
         button:SetScript("OnClick", function(self)
-            T.SelectEditor(self.ClassId, nil);
+            T.SelectEditor(self.ClassId, self.LastSpec);
         end);
-        
+
         T.ClassButtons[classFile] = button;
-        
+
         --print(className, classFile, classID)
         CreateSpecButtons(classID, button, frame);
-        
+
         Y_Offset = Y_Offset + 26;
     end
 end
 
---local 
+--local
 
 local function CreateRotationEditor()
     local frame = CreateFrame("Frame", "RotationEditor", UIParent, "BasicFrameTemplateWithInset");
@@ -193,10 +278,10 @@ local function CreateRotationEditor()
     frame:SetResizable(true);
     frame:SetScript("OnMouseDown", frame.StartMoving);
     frame:SetScript("OnMouseUp", frame.StopMovingOrSizing);
-    
+
     frame.TitleText:SetPoint("LEFT", 10, 0);
     frame.TitleText:SetText("RotationEditor");
-    
+
     frame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
     frame:SetScript("OnEvent", function (self, event, ...)
         if event == "PLAYER_SPECIALIZATION_CHANGED" then
@@ -229,32 +314,32 @@ local function CreateRotationEditor()
     frame.scrollFrame.scrollChild = CreateFrame("Frame", "ClassListContentFrame", frame.scrollFrame);
     frame.scrollFrame.scrollChild:SetSize(200, 100);
     frame.scrollFrame.scrollChild:SetPoint("TOPLEFT", 5, -5);
-    frame.scrollFrame:SetScrollChild(frame.scrollFrame.scrollChild);    
-    
-    CreateClassList(frame.scrollFrame.scrollChild, frame);    
-    
-    X_Offset = 20; 
+    frame.scrollFrame:SetScrollChild(frame.scrollFrame.scrollChild);
+
+    CreateClassList(frame.scrollFrame.scrollChild, frame);
+
+    X_Offset = 20;
     local WIDTH = 70;
-    
+
     T.ImportButton = CreateSimpleButton("ImportButton", WIDTH, frame, "Import", "Import all rotations");
     T.ImportButton:SetPoint("TOPRIGHT", -X_Offset, -25);
     T.ImportButton:SetScript("OnClick", function(self)
         print("Show Import")
     end);
     X_Offset = X_Offset + WIDTH + 5;
-    
+
     T.ExportButton = CreateSimpleButton("ExportButton", WIDTH, frame, "Export", "Export all rotations");
     T.ExportButton:SetPoint("TOPRIGHT", -X_Offset, -25);
     X_Offset = X_Offset + WIDTH + 5;
     T.ExportButton:SetScript("OnClick", function(self)
         print("Show Export")
     end);
-    
+
     T.SaveButton = CreateSimpleButton("SaveButton", WIDTH, frame, "Save", "Save current rotation");
     T.SaveButton:SetPoint("TOPRIGHT", -X_Offset, -25);
     T.SaveButton:SetEnabled(false);
     T.SaveButton:SetScript("OnClick", function(self)
-        -- todo: 
+        -- todo:
         --if check_script then
         --    -- todo: show error
         --    return;
@@ -263,7 +348,7 @@ local function CreateRotationEditor()
         T.LoadCurrentRotation();
         self:SetEnabled(false);
     end);
-        
+
     return frame;
 end
 
@@ -272,7 +357,7 @@ function T.SelectEditor(classId, specId)
         classId = select(3, UnitClass("player"));
         specId = GetSpecializationInfo(GetSpecialization());
     end
-    
+
     if not specId then
         if select(3, UnitClass("player")) == classId then
             specId = GetSpecializationInfo(GetSpecialization());
@@ -280,39 +365,39 @@ function T.SelectEditor(classId, specId)
             specId = GetSpecializationInfoForClassID(classId, 1);
         end
     end
-    
+
     -- Hide all
-    for _, c in pairs(T.ClassButtons) do
-        for _, s in pairs(c.SpecButtons) do
-            s:ClearNormalTexture();
-            s.EditPanel:Hide();
-            s:Hide();
+    for _, classButton in pairs(T.ClassButtons) do
+        classButton:ClearNormalTexture();
+        for _, specButton in pairs(classButton.SpecButtons) do
+            specButton:ClearNormalTexture();
+            specButton.EditPanel:Hide();
+            specButton:Hide();
         end
-        c:ClearNormalTexture();
     end
-    
+
     -- Select
-    for _, c in pairs(T.ClassButtons) do
-        if c.ClassId == classId then
-            c:SetNormalTexture("Interface/Buttons/ButtonHilight-Square");
-            c:GetNormalTexture():SetBlendMode("ADD");
-            
-            for _, s in pairs(c.SpecButtons) do
-                s:Show();
-                -- print(s.SpecId, specId)
-                if s.SpecId == specId then
-                    s:SetNormalTexture("Interface/Buttons/ButtonHilight-Square");
-                    s:GetNormalTexture():SetBlendMode("ADD");
-                    s.EditPanel:Show();
-                 end
+    for _, classButton in pairs(T.ClassButtons) do
+        if classButton.ClassId == classId then
+            classButton:SetNormalTexture("Interface/Buttons/ButtonHilight-Square");
+            classButton:GetNormalTexture():SetBlendMode("ADD");
+
+            for _, specButton in pairs(classButton.SpecButtons) do
+                specButton:Show();
+                -- print(specButton.SpecId, specId)
+                if specButton.SpecId == specId then
+                    specButton:SetNormalTexture("Interface/Buttons/ButtonHilight-Square");
+                    specButton:GetNormalTexture():SetBlendMode("ADD");
+                    specButton.EditPanel:Show();
+                end
             end
             break;
         end
     end
-    
+
     local specName, description, icon, role = select(2, GetSpecializationInfoByID(specId));
     --print(classId, specId, specName, description, icon, role);
-            
+
     T.RotationEditor.TitleText:SetText("Rotation Editor: "..GetColoredClass(classId).." "..specName.." "..role);
 end
 

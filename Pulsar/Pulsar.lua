@@ -181,6 +181,10 @@ end;
 infoFrame:SetPoint("CENTER", 0, 200);
 infoFrame:Show();
 
+--infoFrame:RegisterEvent("CRITERIA_COMPLETE");
+--infoFrame:RegisterEvent("ENCOUNTER_LOOT_RECEIVED");
+--infoFrame:SetScript("OnEvent", function (...) print("OnEvent", ...) end);
+
 function T.SetColor(color)
     local cc = color or {};
     pulsarFrame.Texture:SetColorTexture(cc.R or 0, cc.G or 0, cc.B or 0, 1);

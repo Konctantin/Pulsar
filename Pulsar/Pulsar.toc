@@ -1,4 +1,4 @@
-## Interface: 190200
+## Interface: 100107
 ## Title: Pulsar
 ## Author: Konstatin
 ## Version: 1.0.1

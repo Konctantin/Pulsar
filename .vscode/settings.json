@@ -42,6 +42,23 @@
         "GameTooltip_Hide",
         "AutoCastShine_AutoCastStart",
         "AutoCastShine_AutoCastStop",
-        "GameTooltip_AddBlankLineToTooltip"
+        "GameTooltip_AddBlankLineToTooltip",
+        "ActionButton_ShowOverlayGlow",
+        "ActionButton_HideOverlayGlow",
+        "GameFontHighlight",
+        "GetMicroIconForRole",
+        "TextureKitConstants",
+        "GameTooltip_InsertFrame",
+        "GetNumSpecializationsForClassID",
+        "GetNumClasses",
+        "GetClassInfo",
+        "RAID_CLASS_COLORS",
+        "pairs",
+        "select",
+        "GetSpecializationInfoForClassID",
+        "UIParent",
+        "GameTooltip",
+        "GetSpecializationInfoByID",
+        "tostring"
     ]
 }
