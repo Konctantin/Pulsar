@@ -1,13 +1,19 @@
-## Interface: 100107
+## Interface: 11501
 ## Title: Pulsar
 ## Author: Konstatin
 ## Version: 1.0.1
 ## SavedVariables: PULSAR_GLOBAL_STORAGE
 
+Utils.lua
+
+Model/Common.lua
+
 Script/Utils.lua
 Script/Condition.lua
 Script/Action.lua
 Script/Script.lua
+
+#API/Environment.Classic.lua
 
 Model/SpellInfo.lua
 Model/ItemInfo.lua

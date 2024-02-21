@@ -8,28 +8,30 @@ end
 
 for c = 1, GetNumClasses() do
     local _, classFile, classID = GetClassInfo(c);
-    if not PULSAR_GLOBAL_STORAGE[classFile] then
-        PULSAR_GLOBAL_STORAGE[classFile] = { };
-    end
+    if classID then
+        if not PULSAR_GLOBAL_STORAGE[classFile] then
+            PULSAR_GLOBAL_STORAGE[classFile] = { };
+        end
 
-    local numSpecializations = GetNumSpecializationsForClassID(classID);
-    --print(numSpecializations)
-    for s = 1, numSpecializations do
-        local specId, specName, _, _, role = GetSpecializationInfoForClassID(c, s);
-        --print(specId, specName)
-        if not PULSAR_GLOBAL_STORAGE[classFile][specId] then
-            --print("ADD", classID, classFile, specId, specName, role)
-            PULSAR_GLOBAL_STORAGE[classFile][specId] = {
-                Info = {
-                    Id        = s,
-                    SpecId    = specId,
-                    ClassId   = c,
-                    ClassFile = classFile,
-                    SpecName  = specName,
-                    Role      = role,
-                },
-                Code = "",
-            };
+        local numSpecializations = GetNumSpecializationsForClassID(classID);
+        --print(numSpecializations)
+        for s = 1, numSpecializations do
+            local specId, specName, _, _, role = GetSpecializationInfoForClassID(c, s);
+            --print(specId, specName)
+            if not PULSAR_GLOBAL_STORAGE[classFile][specId] then
+                --print("ADD", classID, classFile, specId, specName, role)
+                PULSAR_GLOBAL_STORAGE[classFile][specId] = {
+                    Info = {
+                        Id        = s,
+                        SpecId    = specId,
+                        ClassId   = c,
+                        ClassFile = classFile,
+                        SpecName  = specName,
+                        Role      = role,
+                    },
+                    Code = "",
+                };
+            end
         end
     end
 end
@@ -50,6 +52,8 @@ function T.LoadCurrentRotation()
         return;
     end
 
+    -- /dump PULSAR_GLOBAL_STORAGE["HUNTER"][1]
+
     T.ScriptIntance = nil;
     if tostring(rotationInfo.Code) ~= "" then
         T.ScriptIntance = T.Script:New(rotationInfo.Code);
@@ -61,9 +65,11 @@ function T.LoadCurrentRotation()
         local classColorStr = RAID_CLASS_COLORS[classFile].colorStr;
         local classColoredText = HEIRLOOMS_CLASS_FILTER_FORMAT:format(classColorStr, classDisplayName);
 
-        print("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..specName.."|r|cff15bd05 is enabled.|r", true)
+        print("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..specName.."|r|cff15bd05 is enabled.|r");
 
-        T.StateInfo = T.State:New(T.ScriptIntance);
+        -- /dump Pulsar.State.Spells
+        -- /dump Pulsar.ScriptIntance.Actions
+        T.StateInfo = T.State:New(T.ScriptIntance.Actions);
         T.StateInfo:Update();
 
         T.ScriptIntance:Run(T.StateInfo);
@@ -113,6 +119,7 @@ local function pulsarFrame_OnEvent(self, event, ...)
             elseif subEvent == "SPELL_CAST_START" then
                 SetTargetCastintInfo(spellId, destGUID, GetTime()+0.002);
                 T.SetColor(nil);
+                T.SetCurrentIcon(nil);
             end
         end
         if T.COMBATLOG_MODS then
@@ -131,16 +138,31 @@ local function pulsarFrame_OnEvent(self, event, ...)
     end
 end
 
+local function Tick()
+    if GetCurrentKeyBoardFocus() then
+        return;
+    end
+    if IsLeftAltKeyDown() then
+        return;
+    end
+    if not T.GetToogle("Pulsar_ControlPanel_EnabledButton") then
+        return;
+    end
+
+    T.StateInfo:Update();
+    T.ScriptIntance:Run(T.StateInfo);
+end
+
 local function pulsarFrame_OnUpdate(self, elapsed)
     self.timer = (self.timer or 0) + elapsed;
-    --if self.timer > 0.15 then
-    --    if type(T.ScriptIntance) = "table" then
-    --        T.SetColor(nil);
-    --        T.StateInfo:Update();
-    --        T.ScriptIntance:Run(T.StateInfo);
-    --    end
-    --    self.timer = 0;
-    --end
+    if self.timer > 0.15 then
+        if type(T.ScriptIntance) == "table" and type(T.StateInfo) == "table" then
+            T.SetColor(nil);
+            T.SetCurrentIcon(nil);
+            Tick();
+        end
+        self.timer = 0;
+    end
 end
 
 local pulsarFrame = CreateFrame("Frame");
@@ -185,9 +207,19 @@ infoFrame:Show();
 --infoFrame:RegisterEvent("ENCOUNTER_LOOT_RECEIVED");
 --infoFrame:SetScript("OnEvent", function (...) print("OnEvent", ...) end);
 
+-- /dump Pulsar:SetColor()
+-- /dump Pulsar.PulsarFrame.Texture:SetColorTexture(0.5, 0.5, 0.5, 1)
 function T.SetColor(color)
-    local cc = color or {};
-    pulsarFrame.Texture:SetColorTexture(cc.R or 0, cc.G or 0, cc.B or 0, 1);
+    local r = color and color.R or 0;
+    local g = color and color.G or 0;
+    local b = color and color.B or 0;
+    pulsarFrame.Texture:SetColorTexture(r, g, b, 1);
+end
+
+function T.GetToogle(key)
+    return PULSAR_GLOBAL_STORAGE
+        and PULSAR_GLOBAL_STORAGE.BUTTON_STATE
+        and PULSAR_GLOBAL_STORAGE.BUTTON_STATE[key];
 end
 
 T.PulsarFrame = pulsarFrame;

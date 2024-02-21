@@ -54,21 +54,12 @@ function Script:ParseCommand(lineNumber, line, actionPart, conditionPart)
 
     if conditionPart then
         local condList = {strsplit('&', conditionPart)};
-        for i, c in ipairs(condList) do
-            local condition = T.Condition:New();
-
-            local non, args, operand, value = string.match(c, '^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$');
-
-            local conditionalMethod, conditionalParam, conditionalFiled = ParseAction(args)
-
-            condition.non    = non;
-            condition.opened = operand;
-            condition.value  = value;
-            condition.args   = args;
-            condition.field =
-
-            -- todo: parse args
-            action:AddCondition(condition)
+        for _, condStr in ipairs(condList) do
+            condStr = string.trim(condStr);
+            if condStr ~= "" then
+                local condition = T.Condition.Parse(condStr);
+                action:AddCondition(condition);
+            end
         end;
     end;
 
@@ -84,19 +75,17 @@ function Script:Parse()
     for line in string.gmatch(self.code, '[^\r\n]+') do
         line = string.trim(line);
         if line ~= '' then
-            local actionPart, conditionPart = nil, nil;
-
             if line:find('^%-%-') then
-                actionPart = line
-            --elseif line:find('^#') then
-            --    local presetup = line;
+                --actionPart = line
+            elseif line:find('^#') then
+                local presetup = line;
             elseif line:find('[', nil, true) then
-                actionPart, conditionPart = string.match(line, '^/?(.+)%s*%[(.+)%]$');
+                local actionPart, conditionPart = string.match(line, '^/?(.+)%s*%[(.+)%]$');
+                self:ParseCommand(lineNumber, line, actionPart, conditionPart);
             else
-                actionPart = string.match(line, '^/?(.+)$')
+                local actionPart = string.match(line, '^/?(.+)$');
+                self:ParseCommand(lineNumber, line, actionPart, nil);
             end
-
-            self:ParseCommand(lineNumber, line, actionPart, conditionPart);
         end
         lineNumber = lineNumber + 1;
     end
@@ -105,8 +94,15 @@ function Script:Parse()
 end
 
 function Script:Run(state)
-    for i, action in ipairs(self.Actions) do
-        action:Call(state);
+    for _, action in ipairs(self.Actions) do
+        local result, color, icon = action:Call(state);
+        if result then
+            T.SetColor(color);
+            if icon then
+                T.SetCurrentIcon(icon);
+            end
+            break;
+        end
     end
 end
 

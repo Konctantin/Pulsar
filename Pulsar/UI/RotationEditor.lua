@@ -231,48 +231,50 @@ local function CreateClassList(parent, frame)
 
     for classIndex = 1, GetNumClasses() do
         local className, classFile, classID = GetClassInfo(classIndex);
+        if className then
+            local button = CreateFrame("Button", classFile.."_ClassButton", parent);
+            button:SetSize(parent:GetWidth()-20, 25);
+            button:SetPoint("TOPLEFT", 0, -Y_Offset);
 
-        local button = CreateFrame("Button", classFile.."_ClassButton", parent);
-        button:SetSize(parent:GetWidth()-20, 25);
-        button:SetPoint("TOPLEFT", 0, -Y_Offset);
+            button:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square");
+            button:GetHighlightTexture():SetBlendMode("ADD");
+            button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress");
+            button:GetPushedTexture():SetDrawLayer("OVERLAY");
 
-        button:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square");
-        button:GetHighlightTexture():SetBlendMode("ADD");
-        button:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress");
-        button:GetPushedTexture():SetDrawLayer("OVERLAY");
+            button.icon = button:CreateTexture("", "BACKGROUND");
+            button.icon:SetWidth(25);
+            button.icon:SetHeight(25);
+            button.icon:SetPoint("LEFT");
+            button.icon:SetTexture(T.IconTexture[classFile]);
 
-        button.icon = button:CreateTexture("", "BACKGROUND");
-        button.icon:SetWidth(25);
-        button.icon:SetHeight(25);
-        button.icon:SetPoint("LEFT");
-        button.icon:SetTexture(T.IconTexture[classFile]);
+            button.name = button:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
+            button.name:SetPoint("LEFT", 35, 0);
+            button.name:SetText(GetColoredClass(classID));
 
-        button.name = button:CreateFontString(nil, "ARTWORK", "GameFontHighlight");
-        button.name:SetPoint("LEFT", 35, 0);
-        button.name:SetText(GetColoredClass(classID));
+            button.ClassFile = classFile;
+            button.ClassId = classID;
+            button.LastSpec = nil;
 
-        button.ClassFile = classFile;
-        button.ClassId = classID;
-        button.LastSpec = nil;
+            button:SetScript("OnClick", function(self)
+                T.SelectEditor(self.ClassId, self.LastSpec);
+            end);
 
-        button:SetScript("OnClick", function(self)
-            T.SelectEditor(self.ClassId, self.LastSpec);
-        end);
+            T.ClassButtons[classFile] = button;
 
-        T.ClassButtons[classFile] = button;
+            --print(className, classFile, classID)
+            CreateSpecButtons(classID, button, frame);
 
-        --print(className, classFile, classID)
-        CreateSpecButtons(classID, button, frame);
-
-        Y_Offset = Y_Offset + 26;
+            Y_Offset = Y_Offset + 26;
+        end
     end
 end
 
 --local
 
 local function CreateRotationEditor()
+    local FRAME_WIDTH = 800;
     local frame = CreateFrame("Frame", "RotationEditor", UIParent, "BasicFrameTemplateWithInset");
-    frame:SetSize(650, 400);
+    frame:SetSize(FRAME_WIDTH, 400);
     frame:SetPoint("CENTER");
     frame:SetMovable(true);
     frame:SetResizable(true);
@@ -305,10 +307,11 @@ local function CreateRotationEditor()
     --frame.ResizeButton = resizeButton;
 
     -- adding a scrollframe (includes basic scrollbar thumb/buttons and functionality)
+    local CLASS_LIST_WIDTH = 200;
     frame.scrollFrame = CreateFrame("ScrollFrame", "ClassListFrame", frame, "UIPanelScrollFrameTemplate");
     frame.scrollFrame:SetPoint("TOPLEFT", 12, -30);
     --frame.scrollFrame:SetSize()
-    frame.scrollFrame:SetPoint("BOTTOMRIGHT", -470, 8);
+    frame.scrollFrame:SetPoint("BOTTOMRIGHT", -(FRAME_WIDTH-CLASS_LIST_WIDTH+22), 8);
 
     -- creating a scrollChild to contain the content
     frame.scrollFrame.scrollChild = CreateFrame("Frame", "ClassListContentFrame", frame.scrollFrame);
@@ -427,8 +430,13 @@ function T.ShowRotationEditor()
     if not T.RotationEditor then
        T.RotationEditor = CreateRotationEditor();
     end
-    T.RotationEditor:Show();
-    T.LoadEditors();
-    T.SelectEditor(nil, nil);
-    T.SaveButton:SetEnabled(false);
+
+    if not T.RotationEditor:IsVisible() then
+        T.RotationEditor:Show();
+        T.LoadEditors();
+        T.SelectEditor(nil, nil);
+        T.SaveButton:SetEnabled(false);
+    else
+        T.RotationEditor:Hide();
+    end
 end

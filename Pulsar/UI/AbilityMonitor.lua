@@ -178,12 +178,6 @@ function T.CreateControlPanel()
     return frame;
 end;
 
-function T.SetCurrentIcon(icon)
-    if T.ControlPanel and T.ControlPanel.icon and T.ControlPanel:IsVisible() then
-        T.ControlPanel.icon:SetTexture(icon);
-    end
-end
-
 --end;
 --CreateBorder(CopyChat, 12, 1, 1, 1)
 

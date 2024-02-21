@@ -60,5 +60,6 @@
         "GameTooltip",
         "GetSpecializationInfoByID",
         "tostring"
-    ]
+    ],
+    "files.encoding": "utf8"
 }

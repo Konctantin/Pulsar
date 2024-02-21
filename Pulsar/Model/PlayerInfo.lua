@@ -1,4 +1,4 @@
-﻿local _, T = ...;
+local _, T = ...;
 
 T.PlayerInfo = {
     Name     = "",

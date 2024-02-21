@@ -17,29 +17,20 @@ loadfile('Pulsar/Model/State.lua')(T.Name, T);
 
 loadfile('Pulsar/KeyMap.lua')(T.Name, T);
 
-function Create()
-    local obj = { Name = "46" };
-
-    obj.Test = function(self)
-        print(self.Name)
-    end
-
-    return obj;
-end
-
-local s = Create();
-s:Test();
-
 local code = [[
 exit [dead]
 exit [!combat]
 spell(Moonfire:8921) [target.aura.duration(Sunfire:321) < 2]
-macro(My Macro:1) [move]
-item(My Item:321) [move]
-spell(Moonfire:8921) [move & !aoe]
+spell(Moonfire:8921) [!move]
 spell(Sunfire:51723) [move]
 ]];
 
+local script = T.Script:New(code)
+script:Parse();
+print(script);
+
+--print(string.match('!p.aura(Aura:123)', '^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$'))
+--[[
 local script = T.Script:New(code);
 
 script:Parse();
@@ -47,5 +38,6 @@ script:Parse();
 local state = T.State:New(script.Actions);
 state:Update();
 
-script:Test(state);
+script:Run(state);
 
+]]

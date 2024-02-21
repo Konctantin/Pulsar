@@ -1,22 +1,25 @@
 local _, T = ...;
 
-T.Condition = { apis = {} };
-
-T.Condition.opts = setmetatable({
-    __default = {
-        owner = true,
-        pet   = true,
-        arg   = true,
-        type  = 'compare',
-    }
-}, {
-    __newindex = function(t, k, v)
-        rawset(t, k, setmetatable(v, {__index = t.__default}))
-    end,
-    __index = function(t)
-        return t.__default
-    end,
-})
+T.Condition = {
+    func     = nil;
+    params   = {};
+    comparer = nil;
+    value    = nil;
+    apis     = {},
+    opts     = setmetatable({
+        __default = {
+            arg   = true,
+            type  = 'compare',
+        }
+    }, {
+        __newindex = function(t, k, v)
+            rawset(t, k, setmetatable(v, {__index = t.__default}))
+        end,
+        __index = function(t)
+            return t.__default
+        end,
+    })
+};
 
 local opTabler = {
     compare = {
@@ -43,12 +46,6 @@ local opTabler = {
     }
 }
 
-local fieldTypes = {
-    ["duration"] = true,
-    ["exists"] = true,
-    ["count"] = true,
-};
-
 local multiTabler = {
     ['~']  = true,
     ['!~'] = true,
@@ -60,16 +57,19 @@ local parses = {
 }
 
 local function trynumber(value)
-    return tonumber(value) or value
+    return tonumber(value) or value;
 end
 
 local function trynil(value)
-    return value ~= '' and value or nil
+    return value ~= '' and value or nil;
 end
 
-function T.Condition:New()
+function T.Condition:New(func, params, comparer, value)
     local obj = {
-
+        func     = func,
+        params   = params,
+        comparer = comparer,
+        value    = value
     };
 
     self.__index = self;
@@ -79,21 +79,15 @@ function T.Condition:New()
 end
 
 function T.Condition:Call(state)
-    return true;
+    local apiResult = self.func(state, self.params);
+    local result = self.comparer(apiResult, self.value);
+    return result
 end
 
 function T:RegisterCondition(name, opts, api)
     if opts then
         if opts.type and not opTabler[opts.type] then
             error([[Bad argument opts.type (expect compare/boolean/equality)]], 2)
-        end
-
-        if type(opts.fields) == "table" then
-            for _, f in ipairs(opts.fields) do
-                if not fieldTypes[f] then
-                    error(format([[Bad field %s for %s]], f, name), 2);
-                end
-            end
         end
 
         for i, v in ipairs(parses) do
@@ -107,107 +101,36 @@ function T:RegisterCondition(name, opts, api)
     T.Condition.opts[name] = opts
 end
 
-function T.Condition:Run(condition)
-    if not condition then
-        return true
-    end
-    if type(condition) == 'string' then
-        return self:RunCondition(condition)
-    elseif type(condition) == 'table' then
-        for _, v in ipairs(condition) do
-            if not self:Run(v) then
-                return false
-            end
-        end
-        return true
-    else
-        T.assert(false, 'Invalid Condition: `%s` (type error)', condition)
-    end
-end
-
-function T.Condition:RunCondition(condition)
-    local owner, pet, cmd, arg, op, value = self:ParseCondition(condition)
-
-    local fn  = self.apis[cmd]
-    local opts = self.opts[cmd]
-    if not fn then
-        error('Big Bang !!!!!!')
-    end
-
-    local res = fn(owner, pet, arg)
-    return opTabler[opts.type][op](res, value)
-end
-
-function T.Condition:ParseTarget(str)
+function T.Condition.ParseApi(str)
     if not str then
         return
     end
 
-    local targer, pet = T.ParseQuote(str)
-    --owner = T.ParsePetOwner(owner)
-    if not (targer == "player" or targer == "target") then
-        return
+    local apif, param = string.match(str:trim(), '^([%a%.]+)%s*%((.+)%)$');
+    if not apif then
+        apif = string.match(str:trim(), '^([%a%.]+)%s*$');
     end
+    local id = ParseID(param);
 
-    --local petInputed = not not pet
-    --pet = T.ParsePetIndex(targer, pet)
-    return targer--, pet, petInputed
+    return apif, param, id;
 end
 
-function T.Condition:ParseCmd(major, minor)
-    if not major then
-        return
-    end
-
-    local cmd, arg = T.ParseQuote(major)
-    return minor and format('%s.%s', cmd, minor) or cmd, arg, not not arg
-end
-
-function T.Condition:ParseApi(str)
-    if not str then
-        return
-    end
-
-    local inQuote = false
-    local args = {''}
-
-    for char in str:gmatch('.') do
-        if char == '.' and not inQuote then
-            tinsert(args, '')
-        else
-            args[#args] = args[#args] .. char
-        end
-
-        if char == '(' then
-            inQuote = true
-        elseif char == ')' then
-            inQuote = false
-        end
-    end
-
-    local target, pet, petInputed = self:ParseTarget(args[1])
-    local cmd,   arg, argInputed = self:ParseCmd(unpack(args, target))
-
-    return target or "player", pet, cmd, arg, petInputed, argInputed
-end
-
-function T.Condition:ParseCondition(condition)
+function T.Condition.Parse(condition)
     -- [ target.aura(SomeSpell:123,player) ]
-    local non, args, operand, value = condition:match('^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$')
+    local non, args, operand, value = condition:match('^(!?)([^!=<>~]+)%s*([!=<>~]*)%s*(.*)$');
+    T.assert(non, 'Invalid Condition: `%s` (Can`t parse)', condition);
 
-    T.assert(non, 'Invalid Condition: `%s` (Can`t parse)', condition)
+    local funcName, paramText, paramId = T.Condition.ParseApi(args);
+    T.assert(funcName, 'Invalid Condition API function: `%s` (Can`t parse)', args);
 
-    --
-    local target, cmd, arg, petInputed, argInputed = self:ParseApi(args:trim())
-
-    T.assert(cmd, 'Invalid Condition: `%s` (Can`t parse)', condition)
-    T.assert(self.apis[cmd], 'Invalid Condition: `%s` (Not found cmd: `%s`)', condition, cmd)
+    local func = T.Condition.apis[funcName];
+    T.assert(func, 'Invalid Condition: `%s` (Not found cmd: `%s`)', condition, funcName)
 
     operand = trynil(operand)
     value = trynil(value)
     non   = trynil(non)
 
-    local opts = self.opts[cmd]
+    local opts = T.Condition.opts[funcName];
 
     if opts.type == 'compare' or opts.type == 'equality' then
         T.assert(not non, 'Invalid Condition: `%s` (Not need non)',  condition)
@@ -223,7 +146,9 @@ function T.Condition:ParseCondition(condition)
         T.assert(true)
     end
 
-    T.assert(opTabler[opts.type][operand], 'Invalid Condition: `%s` (Invalid op)', condition)
+    local comparer = opTabler[opts.type][operand];
+
+    T.assert(comparer, 'Invalid Condition: `%s` (Invalid op)', condition)
 
     if value then
         if multiTabler[operand] then
@@ -245,129 +170,159 @@ function T.Condition:ParseCondition(condition)
         end
     end
 
-    if not opts.owner then
-        T.assert(not owner, 'Invalid Condition: `%s` (Not need owner)', condition)
-    end
-
-    if not opts.pet then
-        T.assert(not petInputed, 'Invalid Condition: `%s` (Not need pet)', condition)
-    end
-
     if not opts.arg then
-        T.assert(not argInputed, 'Invalid Condition: `%s` (Not need arg)', condition)
-    else
-        arg = trynumber(arg)
-        if opts.argParse then
-            arg = opts.argParse(owner, pet, arg)
-        end
+        T.assert(not (paramId or paramText), 'Invalid Condition: `%s` (Not need arg)', condition);
     end
-    return owner, pet, cmd, arg, operand, value
+
+    local funcArgs = paramId or paramText;
+    local cond = T.Condition:New(func, funcArgs, comparer, value);
+    return cond;
 end
 
 -- The player is in combat
-T:RegisterCondition('combat', { type = 'boolean', arg = false }, function(owner, player, target)
+T:RegisterCondition('combat', { type = 'boolean', arg = false }, function(state, args)
     return UnitAffectingCombat("player");
 end);
 
 -- The unit exists and is dead
-T:RegisterCondition('dead', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
+T:RegisterCondition('dead', { type = 'boolean', arg = false }, function(state, args)
+    return UnitIsDead("target");
 end);
 
 -- The player is dead
-T:RegisterCondition('palyer.dead', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
+T:RegisterCondition('palyer.dead', { type = 'boolean', arg = false }, function(state, args)
+    return UnitIsDeadOrGhost("player");
 end);
 
 -- The unit exists and can be targeted by harmful spells
-T:RegisterCondition('harm', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
+T:RegisterCondition('harm', { type = 'boolean', arg = false }, function(state, args)
+    return not UnitIsFriend("player", "target");
 end);
 
 -- The unit exists and can be targeted by helpful spells
-T:RegisterCondition('help', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
+T:RegisterCondition('help', { type = 'boolean', arg = false }, function(state, args)
+    return UnitIsFriend("player", "target");
 end);
 
 -- Self-explanatory
-T:RegisterCondition('stealth', { type = 'boolean', arg = false }, function(owner, player, target)
-    return IsStealthed()
+T:RegisterCondition('stealth', { type = 'boolean', arg = false }, function(state, args)
+    return IsStealthed();
 end);
 
 -- Unreliable in Wintergrasp
-T:RegisterCondition('flyable', { type = 'boolean', arg = false }, function(owner, player, target)
+T:RegisterCondition('flyable', { type = 'boolean', arg = false }, function(state, args)
     return IsFlyableArea();
 end);
 
 -- Mounted or flight form, and in the air
-T:RegisterCondition('flying', { type = 'boolean', arg = false }, function(owner, player, target)
+T:RegisterCondition('flying', { type = 'boolean', arg = false }, function(state, args)
     return IsFlying();
 end);
 
-
 -- Self-explanatory
-T:RegisterCondition('mounted', { type = 'boolean', arg = false }, function(owner, player, target)
+T:RegisterCondition('mounted', { type = 'boolean', arg = false }, function(state, args)
     return IsMounted();
 end);
 
-T:RegisterCondition('move', { type = 'boolean', arg = false }, function(owner, player, target)
+T:RegisterCondition('metanorth', { type = 'boolean', arg = false }, function(state, args)
+    return IsMounted();
+end);
+
+T:RegisterCondition('move', { type = 'boolean', arg = false }, function(state, args)
+    return GetUnitSpeed("player") ~= 0 or IsFalling()
+        and T.GetUnitBuff("player", 97128) ~= nil;
+end);
+
+T:RegisterCondition('party', { type = 'boolean', arg = false }, function(state, args)
+    return IsInGroup();
+end);
+
+T:RegisterCondition('raid', { type = 'boolean', arg = false }, function(state, args)
+    return IsInRaid();
+end);
+
+T:RegisterCondition('interrupt', { type = 'boolean', arg = false }, function(state, args)
     return false;
 end);
 
-T:RegisterCondition('party', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
-end);
-
-T:RegisterCondition('party', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
-end);
-
-T:RegisterCondition('interrupt', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
-end);
-
-T:RegisterCondition('dispell', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
-end);
-
-T:RegisterCondition('raid', { type = 'boolean', arg = false }, function(owner, player, target)
-    return false;
-end);
-
-T:RegisterCondition('pause', { type = 'boolean', arg = false }, function(owner, player, target)
-    return not GetCurrentKeyBoardFocus() and IsLeftAltKeyDown();
-end);
-
--- Refer to GetShapeshiftForm for possible values
-T:RegisterCondition('form', { type = 'compare', arg = true }, function(owner, player, target)
+T:RegisterCondition('dispell', { type = 'boolean', arg = false }, function(state, args)
     return false;
 end);
 
 -- Refer to GetShapeshiftForm for possible values
-T:RegisterCondition('stance', { type = 'compare', arg = true }, function(owner, player, target)
-    return false;
+T:RegisterCondition('form', { type = 'compare', arg = false }, function(state, args)
+    return GetShapeshiftForm();
 end);
 
-T:RegisterCondition('target.hp', { type = 'compare', arg = false }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+-- Refer to GetShapeshiftForm for possible values
+T:RegisterCondition('stance', { type = 'compare', arg = false }, function(state, args)
+    return GetShapeshiftForm();
 end);
 
-T:RegisterCondition('target.hpp', { type = 'compare', arg = false }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+T:RegisterCondition('target.hp', { type = 'compare', arg = false }, function(state, args)
+    return UnitHealth("target");
 end);
 
-T:RegisterCondition('player.hp', { type = 'compare', arg = false }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+T:RegisterCondition('target.hpp', { type = 'compare', arg = false }, function(state, args)
+    return UnitHealth("target")*100/UnitHealthMax("target");
 end);
 
-T:RegisterCondition('player.hpp', { type = 'compare', arg = false }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+T:RegisterCondition('player.hp', { type = 'compare', arg = false }, function(state, args)
+    return UnitHealth("player");
 end);
 
-T:RegisterCondition('target.hpmax', { type = 'compare', arg = false }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+T:RegisterCondition('mana', { type = 'compare', arg = false }, function(state, args)
+    return UnitPower("player", 0)*100/UnitPowerMax("player", 0);
 end);
 
-T:RegisterCondition('target.aura', { type = 'compare', arg = false, fields = {"duration","exists","count"} }, function(owner, player, target)
-    --return C_PetBattles.GetHealth(owner, pet)
+T:RegisterCondition('player.hpp', { type = 'compare', arg = false }, function(state, args)
+    return UnitHealth("player")*100/UnitHealthMax("player");
+end);
+
+T:RegisterCondition('target.hpmax', { type = 'compare', arg = false }, function(state, args)
+    return UnitHealthMax("target");
+end);
+
+-- /dump UnitDebuff("target", 1, "player")
+T:RegisterCondition('player.buff', { type = 'boolean', arg = true }, function(state, args)
+    return T.GetUnitBuff("player", args, nil) ~= nil;
+end);
+
+T:RegisterCondition('player.buff.count', { type = 'compare', arg = false }, function(state, args)
+    return select(2, T.GetUnitBuff("player", args, nil));
+end);
+
+T:RegisterCondition('player.buff.duration', { type = 'compare', arg = false }, function(state, args)
+    return select(3, T.GetUnitBuff("player", args, nil));
+end);
+
+-- /dump UnitDebuff("target", 1, "player")
+T:RegisterCondition('target.debuff', { type = 'boolean', arg = true }, function(state, args)
+    return T.GetInitDebuff("target", args, "player") ~= nil;
+end);
+
+T:RegisterCondition('target.debuff.count', { type = 'compare', arg = true }, function(state, args)
+    return select(2, T.GetInitDebuff("target", args, "player"));
+end);
+
+T:RegisterCondition('target.debuff.duration', { type = 'compare', arg = true }, function(state, args)
+    return select(3, T.GetInitDebuff("target", args, "player"));
+end);
+
+T:RegisterCondition('haspet', { type = 'boolean', arg = true }, function(state, args)
+    return UnitExists("pet") and UnitHealth("pet") > 0;
+end);
+
+T:RegisterCondition('target.isrange', { type = 'boolean', arg = true }, function(state, args)
+    local spell = T.SpellInfo:New(tonumber(args) or 0, "");
+    spell:Update();
+    return spell:IsInRange();
+end);
+
+T:RegisterCondition('aoe', { type = 'boolean', arg = true }, function(state, args)
+    return T.GetToogle("Pulsar_ControlPanel_AoeButton");
+end);
+
+T:RegisterCondition('cd', { type = 'boolean', arg = false }, function(state, args)
+    return T.GetToogle("Pulsar_ControlPanel_CDButton");
 end);

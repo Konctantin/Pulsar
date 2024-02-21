@@ -1,4 +1,4 @@
-﻿local _, T = ...;
+local _, T = ...;
 
 T.TargetInfo = {
     Unit     = "target";
@@ -41,6 +41,29 @@ function T.TargetInfo:Update()
     self.IsDead  = UnitIsDeadOrGhost(self.Unit);
 
     self:UpdateAura();
+end
+
+function T.TargetInfo:GetBuff(id, filter)
+    local spellName = GetSpellInfo(id);
+    if not spellName then
+        return false, 0, 0;
+    end
+
+    for i = 1, 40 do
+        local name, icon, count, debuffType, duration, expires, source, canStealOrPurge, _, spellId = UnitBuff(self.Unit, i, filter);
+        if not name then
+            return false, 0, 0;
+        end
+
+        if name == spellName then
+        end
+    end
+
+    return false, 0, 0;
+end
+
+function T.TargetInfo:GetDeBuff(id, filter)
+
 end
 
 function T.TargetInfo:UpdateAura()

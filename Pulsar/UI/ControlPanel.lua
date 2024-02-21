@@ -1,6 +1,6 @@
 local _, T = ...;
 
-local SIZE = 32;
+local SIZE = 24;
 
 local function CreateIconButton(name, parent, size, texture, tooltip)
 
@@ -63,14 +63,18 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
     button.Refresh = function(self)
         local p = self:GetParent();
         if p and p:IsVisible() then
+            AutoCastShine_AutoCastStop(self.Shine);
+            ActionButton_HideOverlayGlow(self);
             if self.Toogled then
                 AutoCastShine_AutoCastStart(self.Shine);
                 ActionButton_ShowOverlayGlow(self);
-            else
-                AutoCastShine_AutoCastStop(self.Shine);
-                ActionButton_HideOverlayGlow(self);
             end;
         end;
+        if not PULSAR_GLOBAL_STORAGE.BUTTON_STATE then
+            PULSAR_GLOBAL_STORAGE.BUTTON_STATE = {};
+        end
+        local name = self:GetName();
+        PULSAR_GLOBAL_STORAGE.BUTTON_STATE[name] = self.Toogled;
     end;
 
     button.Toogle = function(self)
@@ -85,11 +89,6 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
 
     button:SetScript("OnClick", function(self)
         self:Toogle();
-        if not PULSAR_GLOBAL_STORAGE.BUTTON_STATE then
-            PULSAR_GLOBAL_STORAGE.BUTTON_STATE = {};
-        end
-        local name = self:GetName();
-        PULSAR_GLOBAL_STORAGE.BUTTON_STATE[name] = self.Toogled;
     end);
 
     button.LoadState = function(self)
@@ -106,7 +105,11 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
 end
 
 function T.CreateControlPanel()
-    local frame = CreateFrame("Frame", "Pulsar_ControlPanel", QuickJoinToastButton, "BackdropTemplate");
+    -- for classic
+    local parent = QuickJoinToastButton or ChatFrameChannelButton;
+    local Y_OFFSET = QuickJoinToastButton and 0 or 30;
+
+    local frame = CreateFrame("Frame", "Pulsar_ControlPanel", parent, "BackdropTemplate");
     frame:RegisterEvent("MODIFIER_STATE_CHANGED");
     frame:SetScript("OnEvent", function (self, event, modifier, state)
         if state == 0 then return end;
@@ -129,7 +132,7 @@ function T.CreateControlPanel()
     --});
 
     --frame:SetBackdropColor(0, 0, 0);
-    frame:SetPoint("TOPLEFT", QuickJoinToastButton, "TOPRIGHT", 3, 0);
+    frame:SetPoint("TOPLEFT", parent, "TOPRIGHT", 3, Y_OFFSET);
     frame:SetToplevel(true);
     frame:EnableMouse(true);
     frame:SetMovable(true);
@@ -143,7 +146,7 @@ function T.CreateControlPanel()
         icon:SetWidth(SIZE+10);
         icon:SetHeight(SIZE+10);
         icon:SetPoint("BOTTOMLEFT");
-        icon:SetTexture(461114);
+        --icon:SetTexture(461114);
         frame.icon = icon;
     end
 
@@ -161,19 +164,19 @@ function T.CreateControlPanel()
     T.KickButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 4;
 
-    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 458224, "Enable/Disable Cooldowns");
+    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 135826, "Enable/Disable Cooldowns");
     T.CDButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE;
 
     leftPos = leftPos + 6;
 
-    frame.EditorButton = CreateIconButton("EditorButton", frame, SIZE, 4548873, "Open rotation editor");
+    frame.EditorButton = CreateIconButton("EditorButton", frame, SIZE, 132147, "Open rotation editor");
     frame.EditorButton:SetPoint("LEFT", leftPos, 0);
     --frame.EditorButton:SetScript("OnClick", function() T.ShowRotationEditor(); end);
     frame.EditorButton:SetScript("OnClick", T.ShowRotationEditor);
     leftPos = leftPos + SIZE + 4;
 
-    frame.MonitorButton = CreateIconButton("MonitorButton", frame, SIZE, 3717417, "Open ability monitor");
+    frame.MonitorButton = CreateIconButton("MonitorButton", frame, SIZE, 132279, "Open ability monitor");
     SetBindingClick("SHIFT-T", frame.MonitorButton:GetName(), "");
     frame.MonitorButton:SetPoint("LEFT", leftPos, 0);
     frame.MonitorButton:SetScript("OnClick", function() print("MonitorButton"); end);
@@ -183,6 +186,8 @@ function T.CreateControlPanel()
     return frame;
 end;
 
+-- /dump Pulsar.SetCurrentIcon(nil)
+-- /dump Pulsar.SetCurrentIcon(132223)
 function T.SetCurrentIcon(icon)
     if T.ControlPanel and T.ControlPanel.icon and T.ControlPanel:IsVisible() then
         T.ControlPanel.icon:SetTexture(icon);

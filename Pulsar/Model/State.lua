@@ -1,11 +1,12 @@
-﻿local _, T = ...;
+local _, T = ...;
 
 T.State = {
-    Player = {},
-    Target = {},
-    Spells = {},
-    Items  = {},
-    Macros = {},
+    Player  = {},
+    Target  = {},
+    Spells  = {},
+    Items   = {},
+    Macros  = {},
+    Defines = {}
 };
 
 function T.State:New(actions)
@@ -19,9 +20,11 @@ function T.State:New(actions)
         Macros = {},
     };
 
+    -- /dump Pulsar.StateInfo.Spells[14284]
     for i, action in ipairs(actions) do
         local id = tonumber(action.Params) or 0;
         if action.Name == "spell" and id > 0 then
+            --print("spell", id)
             obj.Spells[id] = T.SpellInfo:New(id);
         elseif action.Name == "item" and id > 0 then
             obj.Spells[id] = T.ItemInfo:New(id);
@@ -52,4 +55,49 @@ function T.State:Update()
     for _, macro in pairs(self.Macros) do
         macro:Update();
     end
+end
+
+function T.State:CheckSpell(id)
+    local info = self.Spells[id];
+    local result, color, icon = false, nil, nil;
+    if not info then
+        return result, color, icon;
+    end
+
+    result = info:IsReady();
+    if result then
+        color = info:GetHotKeyColor();
+        icon = info.Icon;
+    end
+    return result, color, icon;
+end
+
+function T.State:CheckItem(id)
+    local info = self.Items[id];
+    local result, color, icon = false, nil, nil;
+    if not info then
+        return result, color, icon;
+    end
+
+    result = info:IsReady();
+    if result then
+        color = info:GetHotKeyColor();
+        icon = info.Icon;
+    end
+    return result, color, icon;
+end
+
+function T.State:CheckMacro(id)
+    local info = self.Macros[id];
+    local result, color, icon = false, nil, nil;
+    if not info then
+        return result, color, icon;
+    end
+
+    result = info:IsReady();
+    if result then
+        color = info:GetHotKeyColor();
+        icon = info.Icon;
+    end
+    return result, color, icon;
 end

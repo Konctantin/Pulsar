@@ -20,7 +20,7 @@ _G.strsplit = function (sep, inputstr)
     for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
         table.insert(t, str);
     end
-    return unpack(t);
+    return table.unpack(t);
 end
 
 _G.GetCurrentKeyBoardFocus = function() return false end;
