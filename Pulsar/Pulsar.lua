@@ -65,7 +65,7 @@ function T.LoadCurrentRotation()
         local classColorStr = RAID_CLASS_COLORS[classFile].colorStr;
         local classColoredText = HEIRLOOMS_CLASS_FILTER_FORMAT:format(classColorStr, classDisplayName);
 
-        print("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..specName.."|r|cff15bd05 is enabled.|r");
+        T.Notify("|cff15bd05Rotation:|r "..classColoredText.." |cff6f0a9a"..specName.."|r|cff15bd05 is enabled.|r", true);
 
         -- /dump Pulsar.State.Spells
         -- /dump Pulsar.ScriptIntance.Actions
@@ -165,55 +165,13 @@ local function pulsarFrame_OnUpdate(self, elapsed)
     end
 end
 
-local pulsarFrame = CreateFrame("Frame");
-
-pulsarFrame:SetFrameStrata("BACKGROUND");
-pulsarFrame:SetWidth(5);
-pulsarFrame:SetHeight(5);
-pulsarFrame:SetPoint("BOTTOMLEFT", "UIParent");
-pulsarFrame.Texture = pulsarFrame:CreateTexture(nil, "BACKGROUND");
-pulsarFrame.Texture:SetAllPoints(true);
-pulsarFrame.Texture:SetColorTexture(1.0, 0.5, 0.0, 1);
-
-pulsarFrame:SetScript("OnUpdate", pulsarFrame_OnUpdate);
-pulsarFrame:SetScript("OnEvent",  pulsarFrame_OnEvent);
-pulsarFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
-pulsarFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
-pulsarFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
-pulsarFrame:RegisterEvent("MODIFIER_STATE_CHANGED");
-pulsarFrame:RegisterEvent("LEARNED_SPELL_IN_TAB");
-pulsarFrame:RegisterEvent("PLAYER_LEAVING_WORLD");
-pulsarFrame:Show();
-
-local infoFrame = CreateFrame("Frame");
-infoFrame:SetScript("OnUpdate", function (self, elapsed)
-    if (infoFrame.Duration or 0) < GetTime() then
-        infoFrame.Msg:SetText("");
-    end
-end);
-infoFrame:SetHeight(300);
-infoFrame:SetWidth(600);
-infoFrame.Msg = infoFrame:CreateFontString(nil, "BACKGROUND", "PVPInfoTextFont");
-infoFrame.Msg:SetAllPoints();
-infoFrame.print = function(msg, toChat)
-    infoFrame.Msg:SetText(msg);
-    if toChat then print(msg) end
-    infoFrame.Duration = GetTime() + 5;
-end;
-infoFrame:SetPoint("CENTER", 0, 200);
-infoFrame:Show();
-
---infoFrame:RegisterEvent("CRITERIA_COMPLETE");
---infoFrame:RegisterEvent("ENCOUNTER_LOOT_RECEIVED");
---infoFrame:SetScript("OnEvent", function (...) print("OnEvent", ...) end);
-
 -- /dump Pulsar:SetColor()
 -- /dump Pulsar.PulsarFrame.Texture:SetColorTexture(0.5, 0.5, 0.5, 1)
 function T.SetColor(color)
     local r = color and color.R or 0;
     local g = color and color.G or 0;
     local b = color and color.B or 0;
-    pulsarFrame.Texture:SetColorTexture(r, g, b, 1);
+    T.PulsarFrame.Texture:SetColorTexture(r, g, b, 1);
 end
 
 function T.GetToogle(key)
@@ -222,5 +180,52 @@ function T.GetToogle(key)
         and PULSAR_GLOBAL_STORAGE.BUTTON_STATE[key];
 end
 
-T.PulsarFrame = pulsarFrame;
-T.InfoFrame = infoFrame;
+function T.Notify(msg, toChat)
+    T.InfoFrame.Msg:SetText(msg);
+    if toChat then
+        print(msg);
+    end
+    T.InfoFrame.Duration = GetTime() + 5;
+end
+
+local function InitMainFrame()
+    local pulsarFrame = CreateFrame("Frame");
+
+    pulsarFrame:SetFrameStrata("BACKGROUND");
+    pulsarFrame:SetWidth(5);
+    pulsarFrame:SetHeight(5);
+    pulsarFrame:SetPoint("BOTTOMLEFT", "UIParent");
+    pulsarFrame.Texture = pulsarFrame:CreateTexture(nil, "BACKGROUND");
+    pulsarFrame.Texture:SetAllPoints(true);
+    pulsarFrame.Texture:SetColorTexture(1.0, 0.5, 0.0, 1);
+
+    pulsarFrame:SetScript("OnUpdate", pulsarFrame_OnUpdate);
+    pulsarFrame:SetScript("OnEvent",  pulsarFrame_OnEvent);
+    pulsarFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED");
+    pulsarFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED");
+    pulsarFrame:RegisterEvent("PLAYER_ENTERING_WORLD");
+    pulsarFrame:RegisterEvent("MODIFIER_STATE_CHANGED");
+    pulsarFrame:RegisterEvent("LEARNED_SPELL_IN_TAB");
+    pulsarFrame:RegisterEvent("PLAYER_LEAVING_WORLD");
+    pulsarFrame:Show();
+
+    local infoFrame = CreateFrame("Frame");
+    infoFrame:SetScript("OnUpdate", function (self, elapsed)
+        if (infoFrame.Duration or 0) < GetTime() then
+            infoFrame.Msg:SetText("");
+        end
+    end);
+    infoFrame:SetHeight(300);
+    infoFrame:SetWidth(600);
+    infoFrame.Msg = infoFrame:CreateFontString(nil, "BACKGROUND", "PVPInfoTextFont");
+    infoFrame.Msg:SetAllPoints();
+    infoFrame:SetPoint("CENTER", 0, 200);
+    infoFrame:Show();
+
+    T.PulsarFrame = pulsarFrame;
+    T.InfoFrame = infoFrame;
+
+    return infoFrame;
+end
+
+InitMainFrame();

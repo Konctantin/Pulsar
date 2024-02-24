@@ -59,7 +59,10 @@
         "UIParent",
         "GameTooltip",
         "GetSpecializationInfoByID",
-        "tostring"
+        "tostring",
+        "UnitBuff",
+        "UnitDebuff",
+        "ChatFrameChannelButton"
     ],
     "files.encoding": "utf8"
 }

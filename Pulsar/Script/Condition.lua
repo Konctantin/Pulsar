@@ -224,13 +224,9 @@ T:RegisterCondition('mounted', { type = 'boolean', arg = false }, function(state
     return IsMounted();
 end);
 
-T:RegisterCondition('metanorth', { type = 'boolean', arg = false }, function(state, args)
-    return IsMounted();
-end);
-
 T:RegisterCondition('move', { type = 'boolean', arg = false }, function(state, args)
     return GetUnitSpeed("player") ~= 0 or IsFalling()
-        and T.GetUnitBuff("player", 97128) ~= nil;
+        and T.GetUnitBuff("player", 97128) ~= true;
 end);
 
 T:RegisterCondition('party', { type = 'boolean', arg = false }, function(state, args)
@@ -241,12 +237,32 @@ T:RegisterCondition('raid', { type = 'boolean', arg = false }, function(state, a
     return IsInRaid();
 end);
 
-T:RegisterCondition('interrupt', { type = 'boolean', arg = false }, function(state, args)
-    return false;
+T:RegisterCondition('kick', { type = 'boolean', arg = false }, function(state, args)
+    return T.CheckInterrupt("target", 1);
 end);
 
 T:RegisterCondition('dispell', { type = 'boolean', arg = false }, function(state, args)
     return false;
+end);
+
+T:RegisterCondition('meele', { type = 'boolean', arg = false }, function(state, args)
+    return false;
+end);
+
+T:RegisterCondition('range', { type = 'boolean', arg = false }, function(state, args)
+    return false;
+end);
+
+T:RegisterCondition('agro', { type = 'compare', arg = false }, function(state, args)
+    return UnitThreatSituation("player") or 0;
+end);
+
+T:RegisterCondition('combo', { type = 'compare', arg = false }, function(state, args)
+    return GetComboPoints("player", "target") or 0;
+end);
+
+T:RegisterCondition('target.combo', { type = 'compare', arg = false }, function(state, args)
+    return GetComboPoints("player", "target") or 0;
 end);
 
 -- Refer to GetShapeshiftForm for possible values
@@ -275,6 +291,10 @@ T:RegisterCondition('mana', { type = 'compare', arg = false }, function(state, a
     return UnitPower("player", 0)*100/UnitPowerMax("player", 0);
 end);
 
+T:RegisterCondition('power', { type = 'compare', arg = false }, function(state, args)
+    return UnitPower("player");
+end);
+
 T:RegisterCondition('player.hpp', { type = 'compare', arg = false }, function(state, args)
     return UnitHealth("player")*100/UnitHealthMax("player");
 end);
@@ -283,30 +303,38 @@ T:RegisterCondition('target.hpmax', { type = 'compare', arg = false }, function(
     return UnitHealthMax("target");
 end);
 
--- /dump UnitDebuff("target", 1, "player")
+-- /dump Pulsar.GetUnitBuff("player", 14320, nil)
+-- /dump Pulsar.Condition.apis["player.buff"](14320)
 T:RegisterCondition('player.buff', { type = 'boolean', arg = true }, function(state, args)
-    return T.GetUnitBuff("player", args, nil) ~= nil;
+    local result = T.GetUnitBuff("player", tonumber(args), nil);
+    return result;
 end);
 
 T:RegisterCondition('player.buff.count', { type = 'compare', arg = false }, function(state, args)
-    return select(2, T.GetUnitBuff("player", args, nil));
+    local result = select(2, T.GetUnitBuff("player", tonumber(args), nil));
+    return result;
 end);
 
 T:RegisterCondition('player.buff.duration', { type = 'compare', arg = false }, function(state, args)
-    return select(3, T.GetUnitBuff("player", args, nil));
+    local result = select(3, T.GetUnitBuff("player", tonumber(args), nil));
+    return result;
 end);
 
 -- /dump UnitDebuff("target", 1, "player")
+-- /dump Pulsar.GetUnitDebuff("target", 13552, "player")
 T:RegisterCondition('target.debuff', { type = 'boolean', arg = true }, function(state, args)
-    return T.GetInitDebuff("target", args, "player") ~= nil;
+    local result = T.GetUnitDebuff("target", tonumber(args), "player");
+    return result;
 end);
 
 T:RegisterCondition('target.debuff.count', { type = 'compare', arg = true }, function(state, args)
-    return select(2, T.GetInitDebuff("target", args, "player"));
+    local result = select(2, T.GetUnitDebuff("target", tonumber(args), "player"));
+    return result;
 end);
 
 T:RegisterCondition('target.debuff.duration', { type = 'compare', arg = true }, function(state, args)
-    return select(3, T.GetInitDebuff("target", args, "player"));
+    local result = select(3, T.GetUnitDebuff("target", tonumber(args), "player"));
+    return result;
 end);
 
 T:RegisterCondition('haspet', { type = 'boolean', arg = true }, function(state, args)

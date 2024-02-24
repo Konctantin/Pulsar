@@ -32,7 +32,7 @@ local function CreateIconButton(name, parent, size, texture, tooltip)
     icon:SetTexture(texture or "Interface/Icons/Temp");
     button.Icon = icon;
 
-    --button.tooltipText = tooltip;
+    button.tooltipText = tooltip;
 
     button:SetScript('OnEnter', OnEnter)
     button:SetScript('OnLeave', OnLeave)
@@ -63,6 +63,7 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
     button.Refresh = function(self)
         local p = self:GetParent();
         if p and p:IsVisible() then
+            self.Shine:Hide();
             AutoCastShine_AutoCastStop(self.Shine);
             ActionButton_HideOverlayGlow(self);
             if self.Toogled then
@@ -75,6 +76,9 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
         end
         local name = self:GetName();
         PULSAR_GLOBAL_STORAGE.BUTTON_STATE[name] = self.Toogled;
+
+        local state = self.Toogled and "|cff00ff00 ON|r" or "|cffff0000 OFF|r";
+        T.Notify("|cff6f0a9a "..self.tooltipText.."|r"..state, true);
     end;
 
     button.Toogle = function(self)
@@ -105,6 +109,10 @@ local function CreateIconToogledButton(name, parent, size, texture, tooltip)
 end
 
 function T.CreateControlPanel()
+    if T.ControlPanel then
+        return;
+    end
+
     -- for classic
     local parent = QuickJoinToastButton or ChatFrameChannelButton;
     local Y_OFFSET = QuickJoinToastButton and 0 or 30;
@@ -152,19 +160,19 @@ function T.CreateControlPanel()
 
     local leftPos = SIZE + 16;
 
-    T.EnabledButton = CreateIconToogledButton("EnabledButton", frame, SIZE, 132376, "Enable/Disable Rotation");
+    T.EnabledButton = CreateIconToogledButton("EnabledButton", frame, SIZE, 132376, "Enable Rotation");
     T.EnabledButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 6;
 
-    T.AoeButton = CreateIconToogledButton("AoeButton", frame, SIZE, 132369, "Enable/Disable AOE Mode");
+    T.AoeButton = CreateIconToogledButton("AoeButton", frame, SIZE, 132369, "Enable AOE Mode");
     T.AoeButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 4;
 
-    T.KickButton = CreateIconToogledButton("KickButton", frame, SIZE, 132938, "Enable/Disable Auto Kick");
+    T.KickButton = CreateIconToogledButton("KickButton", frame, SIZE, 132938, "Enable Auto Kick");
     T.KickButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 4;
 
-    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 135826, "Enable/Disable Cooldowns");
+    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 135826, "Enable Cooldowns");
     T.CDButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE;
 

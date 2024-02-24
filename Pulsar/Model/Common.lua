@@ -3,56 +3,56 @@
 local PING = 0.1;
 
 function T.GetUnitBuff(unit, spellId, filter)
-    local spell_table = { };
-    if type(spellId) == "table" then
-        spell_table = spellId;
-    elseif type(spellId) == "number" then
-        spell_table = { spellId };
-    end
-
-    for _,spell_id in ipairs(spell_table) do
-        local spellName, spellRank = GetSpellInfo(spell_id);
-        if spellName then
-           for i = 1, 80 do
-               --    name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId =
-               local name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId = UnitBuff(unit, i, filter);
-               if not name then
-                   return nil, 0, 0
-               end
-               if name == spellName then
-                   local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
-                   return name, count, rem;
-               end
-           end
+    local spellName, spellRank = GetSpellInfo(spellId);
+    if spellName then
+        for i = 1, 80 do
+            --    name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId =
+            local name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId = UnitBuff(unit, i, filter);
+            if not name then
+                return false, 0, 0
+            end
+            if name == spellName then
+                local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
+                return true, count, rem;
+            end
         end
     end
-    return nil, 0, 0;
+    return false, 0, 0;
 end
 
-function T.GetInitDebuff(unit, spellId, filter)
-    local spell_table = { };
-    if type(spellId) == "table" then
-        spell_table = spellId;
-    elseif type(spellId) == "number" then
-        spell_table = { spellId };
-    end
-
-    for _,spell_id in ipairs(spell_table) do
-        local spellName, spellRank = GetSpellInfo(spell_id);
-        if spellName then
-           for i = 1, 40 do
-               local name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId, canApplyAura, isBossAura = UnitDebuff(unit, i, filter);
-               if not name then
-                   return nil, 0, 0, nil, 0, 0;
-               end
-               if name == spellName then
-                   local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
-                   return name, count, rem;
-               end
-           end
+function T.GetUnitDebuff(unit, spellId, filter)
+    local spellName, spellRank = GetSpellInfo(spellId);
+    if spellName then
+        for i = 1, 80 do
+            local name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId = UnitDebuff(unit, i, filter);
+            if not name then
+                return false, 0, 0;
+            end
+            if name == spellName then
+                local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
+                return true, count, rem;
+            end
         end
     end
-    return nil, 0, 0;
+    return false, 0, 0;
+end
+
+function T.CheckInterrupt(unit, sec)
+    if not T.GetToogle("Pulsar_ControlPanel_KickButton") then
+        return false;
+    end
+
+    local name, text, texture, startTime, endTime, isTradeSkill, castID, notInterruptible, spellID = UnitCastingInfo(unit);
+    if name and not (notInterruptible or isTradeSkill) then
+        if (((endTime / 1000) - GetTime()) - PING) <= (sec or 1) then
+            return true;
+        end
+    end
+
+    local name, text, texture, startTime, endTime, isTradeSkill, notInterruptible, spellID = UnitChannelInfo(unit);
+    if name and not (notInterruptible or isTradeSkill) then
+        return true;
+    end
 end
 
 local ACTION_BAR_TYPES = { 'Action', 'MultiBarBottomLeft', 'MultiBarBottomRight', 'MultiBarRight', 'MultiBarLeft' };

@@ -13,8 +13,6 @@ Script/Condition.lua
 Script/Action.lua
 Script/Script.lua
 
-#API/Environment.Classic.lua
-
 Model/SpellInfo.lua
 Model/ItemInfo.lua
 Model/MacroInfo.lua

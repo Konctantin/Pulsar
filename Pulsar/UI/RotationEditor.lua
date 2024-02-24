@@ -291,20 +291,22 @@ local function CreateRotationEditor()
         end
     end);
 
-    --local resizeButton = CreateFrame("Button", "RotationEditorResizeButton", frame);
-    --resizeButton:SetSize(16, 16);
-    --resizeButton:SetPoint("BOTTOMRIGHT");
-    --resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up");
-    --resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight");
-    --resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down");
-    --resizeButton:SetScript("OnMouseDown", function(self, button)
-    --    frame:StartSizing("BOTTOMRIGHT");
-    --    frame:SetUserPlaced(true);
-    --end);
-    --resizeButton:SetScript("OnMouseUp", function(self, button)
-    --    frame:StopMovingOrSizing();
-    --end);
-    --frame.ResizeButton = resizeButton;
+    --[[
+    local resizeButton = CreateFrame("Button", "RotationEditorResizeButton", frame);
+    resizeButton:SetSize(16, 16);
+    resizeButton:SetPoint("BOTTOMRIGHT");
+    resizeButton:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up");
+    resizeButton:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight");
+    resizeButton:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down");
+    resizeButton:SetScript("OnMouseDown", function(self, button)
+        frame:StartSizing("BOTTOMRIGHT");
+        frame:SetUserPlaced(true);
+    end);
+    resizeButton:SetScript("OnMouseUp", function(self, button)
+        frame:StopMovingOrSizing();
+    end);
+    frame.ResizeButton = resizeButton;
+    ]]
 
     -- adding a scrollframe (includes basic scrollbar thumb/buttons and functionality)
     local CLASS_LIST_WIDTH = 200;
@@ -429,6 +431,7 @@ end
 function T.ShowRotationEditor()
     if not T.RotationEditor then
        T.RotationEditor = CreateRotationEditor();
+       T.RotationEditor:Hide();
     end
 
     if not T.RotationEditor:IsVisible() then
