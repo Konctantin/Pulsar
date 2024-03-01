@@ -69,7 +69,7 @@ function T.LoadCurrentRotation()
 
         -- /dump Pulsar.State.Spells
         -- /dump Pulsar.ScriptIntance.Actions
-        T.StateInfo = T.State:New(T.ScriptIntance.Actions);
+        T.StateInfo = T.State:New(T.ScriptIntance.Actions, T.ScriptIntance.Defines);
         T.StateInfo:Update();
 
         T.ScriptIntance:Run(T.StateInfo);

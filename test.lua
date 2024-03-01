@@ -5,6 +5,7 @@ loadfile('FakeApi.lua')(T.Name, T);
 loadfile('FakeWowDB.lua')(T.Name, T);
 
 loadfile('Pulsar/Script/Utils.lua')(T.Name, T);
+loadfile('Pulsar/Script/Defines.lua')(T.Name, T);
 loadfile('Pulsar/Script/Action.lua')(T.Name, T);
 loadfile('Pulsar/Script/Condition.lua')(T.Name, T);
 loadfile('Pulsar/Script/Script.lua')(T.Name, T);
@@ -20,6 +21,9 @@ loadfile('Pulsar/Model/State.lua')(T.Name, T);
 loadfile('Pulsar/KeyMap.lua')(T.Name, T);
 
 local code = [[
+#range(Range:12)
+#meele(Meele:32)
+
 exit [dead]
 exit [!combat]
 spell(Moonfire:8921) [target.aura.duration(Sunfire:321) < 2]

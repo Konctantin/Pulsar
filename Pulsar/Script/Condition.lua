@@ -246,15 +246,23 @@ T:RegisterCondition('dispell', { type = 'boolean', arg = false }, function(state
 end);
 
 T:RegisterCondition('meele', { type = 'boolean', arg = false }, function(state, args)
-    return false;
+    local spell = state.DefinedSpells['meele'];
+    if not spell then
+        return false;
+    end
+    return spell:IsInRange();
 end);
 
 T:RegisterCondition('range', { type = 'boolean', arg = false }, function(state, args)
-    return false;
+    local spell = state.DefinedSpells['range'];
+    if not spell then
+        return false;
+    end
+    return spell:IsInRange();
 end);
 
 T:RegisterCondition('agro', { type = 'compare', arg = false }, function(state, args)
-    return UnitThreatSituation("player") or 0;
+    return UnitThreatSituation("player", "target") or 0;
 end);
 
 T:RegisterCondition('combo', { type = 'compare', arg = false }, function(state, args)
@@ -310,12 +318,12 @@ T:RegisterCondition('player.buff', { type = 'boolean', arg = true }, function(st
     return result;
 end);
 
-T:RegisterCondition('player.buff.count', { type = 'compare', arg = false }, function(state, args)
+T:RegisterCondition('player.buff.count', { type = 'compare', arg = true }, function(state, args)
     local result = select(2, T.GetUnitBuff("player", tonumber(args), nil));
     return result;
 end);
 
-T:RegisterCondition('player.buff.duration', { type = 'compare', arg = false }, function(state, args)
+T:RegisterCondition('player.buff.duration', { type = 'compare', arg = true }, function(state, args)
     local result = select(3, T.GetUnitBuff("player", tonumber(args), nil));
     return result;
 end);
@@ -337,8 +345,13 @@ T:RegisterCondition('target.debuff.duration', { type = 'compare', arg = true }, 
     return result;
 end);
 
-T:RegisterCondition('haspet', { type = 'boolean', arg = true }, function(state, args)
+T:RegisterCondition('haspet', { type = 'boolean', arg = false }, function(state, args)
     return UnitExists("pet") and UnitHealth("pet") > 0;
+end);
+
+-- /dump Pulsar.HasRune(415076)
+T:RegisterCondition('hasrune', { type = 'boolean', arg = true }, function(state, args)
+    return T.HasRune(args);
 end);
 
 T:RegisterCondition('target.isrange', { type = 'boolean', arg = true }, function(state, args)

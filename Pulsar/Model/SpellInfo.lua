@@ -144,6 +144,9 @@ function T.SpellInfo:UpdateSpellBookId()
 end
 
 function T.SpellInfo:IsInRange()
+    if not self.BookId and self.BookId == 0 then
+        return false;
+    end
     return IsSpellInRange(self.BookId, self.BookType, "target") == 1;
 end
 

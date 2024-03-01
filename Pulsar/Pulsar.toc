@@ -9,6 +9,7 @@ Utils.lua
 Model/Common.lua
 
 Script/Utils.lua
+Script/Defines.lua
 Script/Condition.lua
 Script/Action.lua
 Script/Script.lua

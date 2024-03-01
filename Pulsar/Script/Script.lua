@@ -2,13 +2,15 @@ local _, T = ...;
 
 local Script = {
     code = nil,
-    Actions = {}
+    Actions = {},
+    Defines = {}
 };
 
 function Script:New(code)
     local obj = {
         code = code;
         Actions = {};
+        Defines = {};
     };
 
     self.__index = self;
@@ -76,9 +78,14 @@ function Script:Parse()
         line = string.trim(line);
         if line ~= '' then
             if line:find('^%-%-') then
-                --actionPart = line
+                -- do nothibng
             elseif line:find('^#') then
-                local presetup = line;
+                line = string.trim(string.sub(line, 2));
+                local name, arg = ParseAction(line);
+                T.assert(name, 'Incorrect define name `%s`', line);
+                T.assert(arg, 'Incorrect define argument `%s`', line);
+                T.assert(T.Defines.apis[name], 'Define `%s` does not registered', name);
+                self.Defines[name] = arg;
             elseif line:find('[', nil, true) then
                 local actionPart, conditionPart = string.match(line, '^/?(.+)%s*%[(.+)%]$');
                 self:ParseCommand(lineNumber, line, actionPart, conditionPart);

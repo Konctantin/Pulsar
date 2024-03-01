@@ -6,10 +6,10 @@ T.State = {
     Spells  = {},
     Items   = {},
     Macros  = {},
-    Defines = {}
+    DefinedSpells = {},
 };
 
-function T.State:New(actions)
+function T.State:New(actions, defines)
     local obj = {
         Player = T.PlayerInfo:New(),
         Target = T.TargetInfo:New("target"),
@@ -18,6 +18,7 @@ function T.State:New(actions)
         Spells = {},
         Items  = {},
         Macros = {},
+        DefinedSpells = {},
     };
 
     -- /dump Pulsar.StateInfo.Spells[14284]
@@ -31,6 +32,10 @@ function T.State:New(actions)
         elseif action.Name == "macro" and id > 0 then
             obj.Spells[id] = T.MacroInfo:New(id);
         end
+    end
+
+    for k,v in pairs(defines) do
+        obj.DefinedSpells[k] = T.SpellInfo:New(tonumber(v), k);
     end
 
     self.__index = self;
@@ -54,6 +59,10 @@ function T.State:Update()
 
     for _, macro in pairs(self.Macros) do
         macro:Update();
+    end
+
+    for _, def in pairs(self.DefinedSpells) do
+        def:Update();
     end
 end
 
@@ -101,3 +110,4 @@ function T.State:CheckMacro(id)
     end
     return result, color, icon;
 end
+

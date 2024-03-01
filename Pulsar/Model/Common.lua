@@ -55,6 +55,20 @@ function T.CheckInterrupt(unit, sec)
     end
 end
 
+function T.HasRune(spellId)
+    local spellName = GetSpellInfo(spellId);
+    for spellBookID = 1, 200 do
+        local currentSpellName = GetSpellBookItemName(spellBookID, "spell");
+        if not currentSpellName then
+            return false;
+        end
+        if spellName == currentSpellName then
+            return true;
+        end
+    end
+    return false;
+end
+
 local ACTION_BAR_TYPES = { 'Action', 'MultiBarBottomLeft', 'MultiBarBottomRight', 'MultiBarRight', 'MultiBarLeft' };
 
 function T.GetHotKeyColor(type, id)
