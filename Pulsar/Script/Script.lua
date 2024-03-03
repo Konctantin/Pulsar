@@ -30,13 +30,7 @@ function ParseAction(str)
     if not str then
         return nil, nil;
     end
-    -- exit
-    -- cast(Moonfire:123)
-    -- aura(Moonfire:369).duration
-    --local command, params, field = string.match(str, '^([%a%.]+)%s*%((.+)%)[%.]?(%a*)$');
     local command, params = string.match(str, '^([%a%.]+)%s*%((.+)%)$');
-    --print(format("[%s]", str));
-    --print(format("ParseAction: [%s] [%s]", tostring(command), tostring(params)));
     if command then
         local argId = ParseID(params);
         return command, argId;
@@ -96,8 +90,6 @@ function Script:Parse()
         end
         lineNumber = lineNumber + 1;
     end
-
-    --print(#self.Actions);
 end
 
 function Script:Run(state)

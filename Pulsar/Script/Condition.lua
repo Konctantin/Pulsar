@@ -311,6 +311,11 @@ T:RegisterCondition('target.hpmax', { type = 'compare', arg = false }, function(
     return UnitHealthMax("target");
 end);
 
+T:RegisterCondition('target.type', { type = 'equality', arg = false }, function(state, args)
+    return UnitCreatureType("target");
+end);
+
+
 -- /dump Pulsar.GetUnitBuff("player", 14320, nil)
 -- /dump Pulsar.Condition.apis["player.buff"](14320)
 T:RegisterCondition('player.buff', { type = 'boolean', arg = true }, function(state, args)
