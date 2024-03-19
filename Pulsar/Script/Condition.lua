@@ -275,12 +275,12 @@ end);
 
 -- Refer to GetShapeshiftForm for possible values
 T:RegisterCondition('form', { type = 'compare', arg = false }, function(state, args)
-    return GetShapeshiftForm();
+    return GetShapeshiftForm() or 0;
 end);
 
 -- Refer to GetShapeshiftForm for possible values
 T:RegisterCondition('stance', { type = 'compare', arg = false }, function(state, args)
-    return GetShapeshiftForm();
+    return GetShapeshiftForm() or 0;
 end);
 
 T:RegisterCondition('target.hp', { type = 'compare', arg = false }, function(state, args)

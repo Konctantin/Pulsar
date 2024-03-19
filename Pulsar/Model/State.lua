@@ -28,9 +28,9 @@ function T.State:New(actions, defines)
             --print("spell", id)
             obj.Spells[id] = T.SpellInfo:New(id);
         elseif action.Name == "item" and id > 0 then
-            obj.Spells[id] = T.ItemInfo:New(id);
+            obj.Items[id] = T.ItemInfo:New(id);
         elseif action.Name == "macro" and id > 0 then
-            obj.Spells[id] = T.MacroInfo:New(id);
+            obj.Macros[id] = T.MacroInfo:New(id);
         end
     end
 
