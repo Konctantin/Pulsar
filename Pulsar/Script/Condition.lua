@@ -112,6 +112,8 @@ function T.Condition.ParseApi(str)
     end
     local id = ParseID(param);
 
+    -- print("ParseApi", apif, param, id)
+
     return apif, param, id;
 end
 
@@ -179,6 +181,24 @@ function T.Condition.Parse(condition)
     return cond;
 end
 
+-- The player is casting spell
+T:RegisterCondition('cast', { type = 'boolean', arg = false }, function(state, args)
+    local endTime = select(5, UnitCastingInfo("player")) or 0;
+    if (endTime - (GetTime() * 1000)) >= 0.2 then
+        return true;
+    end
+    return false;
+end);
+
+-- The player is channeling spell
+T:RegisterCondition('channel', { type = 'boolean', arg = false }, function(state, args)
+    local endTime = select(5, UnitChannelInfo("player")) or 0;
+    if (endTime - (GetTime() * 1000)) >= 0 then
+        return true;
+    end
+    return false;
+end);
+
 -- The player is in combat
 T:RegisterCondition('combat', { type = 'boolean', arg = false }, function(state, args)
     return UnitAffectingCombat("player");
@@ -237,6 +257,18 @@ T:RegisterCondition('raid', { type = 'boolean', arg = false }, function(state, a
     return IsInRaid();
 end);
 
+T:RegisterCondition('group', { type = 'boolean', arg = false }, function(state, args)
+    return IsInRaid() or IsInGroup();
+end);
+
+T:RegisterCondition('alone', { type = 'boolean', arg = false }, function(state, args)
+    return not IsInRaid() and not IsInGroup();
+end);
+
+T:RegisterCondition('solo', { type = 'boolean', arg = false }, function(state, args)
+    return not IsInRaid() and not IsInGroup();
+end);
+
 T:RegisterCondition('kick', { type = 'boolean', arg = false }, function(state, args)
     return T.CheckInterrupt("target", 1);
 end);
@@ -259,6 +291,11 @@ T:RegisterCondition('range', { type = 'boolean', arg = false }, function(state, 
         return false;
     end
     return spell:IsInRange();
+end);
+
+T:RegisterCondition('shift', { type = 'boolean', arg = true }, function(state, args)
+    local result = not GetCurrentKeyBoardFocus() and IsLeftShiftKeyDown();
+    return result;
 end);
 
 T:RegisterCondition('agro', { type = 'compare', arg = false }, function(state, args)
@@ -291,6 +328,10 @@ T:RegisterCondition('target.hpp', { type = 'compare', arg = false }, function(st
     return UnitHealth("target")*100/UnitHealthMax("target");
 end);
 
+T:RegisterCondition('target.mana', { type = 'compare', arg = false }, function(state, args)
+    return UnitPower("player", 0);
+end);
+
 T:RegisterCondition('player.hp', { type = 'compare', arg = false }, function(state, args)
     return UnitHealth("player");
 end);
@@ -315,38 +356,89 @@ T:RegisterCondition('target.type', { type = 'equality', arg = false }, function(
     return UnitCreatureType("target");
 end);
 
+-- /dump GetSpellCooldown("Explosive Trap")
+-- /dump select(1,GetSpellCooldown("Explosive Trap"))+select(2,GetSpellCooldown("Explosive Trap"))-GetTime()
+T:RegisterCondition('spell.cd', { type = 'compare', arg = true }, function(state, args)
+    local start, duration = GetSpellCooldown(args);
+    if start <= 0 then
+        return 0;
+    end
+    return (start + duration) - GetTime();
+end);
 
+-- /run for i=1,80 do local name = UnitBuff("player", i) if name then print("|"..name.."|") end end
+-- /dump GetSpellInfo("Eclipse: Lunar")
+-- /dump Pulsar.GetUnitBuff("player", "Eclipse: Lunar", nil)
 -- /dump Pulsar.GetUnitBuff("player", 14320, nil)
 -- /dump Pulsar.Condition.apis["player.buff"](14320)
 T:RegisterCondition('player.buff', { type = 'boolean', arg = true }, function(state, args)
-    local result = T.GetUnitBuff("player", tonumber(args), nil);
+    local result = T.GetUnitBuff("player", args, nil);
     return result;
 end);
 
 T:RegisterCondition('player.buff.count', { type = 'compare', arg = true }, function(state, args)
-    local result = select(2, T.GetUnitBuff("player", tonumber(args), nil));
+    --print('player.buff.count', args)
+    local result = select(2, T.GetUnitBuff("player", args, nil));
     return result;
 end);
 
 T:RegisterCondition('player.buff.duration', { type = 'compare', arg = true }, function(state, args)
-    local result = select(3, T.GetUnitBuff("player", tonumber(args), nil));
+    local result = select(3, T.GetUnitBuff("player", args, nil));
     return result;
 end);
+
+-- /dump Pulsar.GetUnitBuff("player", "Sniper.*", nil, "Sniper.*")
+T:RegisterCondition('player.buff.any', { type = 'boolean', arg = true }, function(state, args)
+    -- print(args, args)
+    local result = T.GetUnitBuff("player", args, nil, args);
+    return result;
+end);
+
+T:RegisterCondition('target.buff', { type = 'boolean', arg = true }, function(state, args)
+    local result = T.GetUnitBuff("target", args);
+    return result;
+end);
+
+T:RegisterCondition('player.debuff', { type = 'boolean', arg = true }, function(state, args)
+    local result = T.GetUnitDebuff("player", args, "player");
+    return result;
+end);
+
+T:RegisterCondition('player.debuff.count', { type = 'compare', arg = true }, function(state, args)
+    local result = select(2, T.GetUnitDebuff("player", args, "player"));
+    return result;
+end);
+
+T:RegisterCondition('player.debuff.duration', { type = 'compare', arg = true }, function(state, args)
+    local result = select(3, T.GetUnitDebuff("player", args, "player"));
+    return result;
+end);
+
+T:RegisterCondition('player.debuff.any', { type = 'boolean', arg = true }, function(state, args)
+    local result = T.GetUnitDebuff("player", args, "player", args);
+    return result;
+end);
+
 
 -- /dump UnitDebuff("target", 1, "player")
 -- /dump Pulsar.GetUnitDebuff("target", 13552, "player")
 T:RegisterCondition('target.debuff', { type = 'boolean', arg = true }, function(state, args)
-    local result = T.GetUnitDebuff("target", tonumber(args), "player");
+    local result = T.GetUnitDebuff("target", args, "player");
     return result;
 end);
 
 T:RegisterCondition('target.debuff.count', { type = 'compare', arg = true }, function(state, args)
-    local result = select(2, T.GetUnitDebuff("target", tonumber(args), "player"));
+    local result = select(2, T.GetUnitDebuff("target", args, "player"));
     return result;
 end);
 
 T:RegisterCondition('target.debuff.duration', { type = 'compare', arg = true }, function(state, args)
-    local result = select(3, T.GetUnitDebuff("target", tonumber(args), "player"));
+    local result = select(3, T.GetUnitDebuff("target", args, "player"));
+    return result;
+end);
+
+T:RegisterCondition('target.debuff.any', { type = 'boolean', arg = true }, function(state, args)
+    local result = T.GetUnitDebuff("target", args, "player", args);
     return result;
 end);
 

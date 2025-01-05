@@ -60,22 +60,16 @@
         "GameTooltip",
         "GetSpecializationInfoByID",
         "tostring",
-        "UnitBuff",
-        "UnitDebuff",
         "ChatFrameChannelButton",
-        "GetSpellInfo",
         "UnitCastingInfo",
         "UnitChannelInfo",
-        "GetSpellBookItemName",
         "GetActionInfo",
         "min",
         "max",
         "strsplit",
         "UnitAffectingCombat",
         "IsSpellInRange",
-        "GetSpellCooldown",
         "GetSpecializationSpells",
-        "IsUsableSpell",
         "IsHarmfulSpell",
         "UnitIsFriend",
         "C_ActionBar",
@@ -99,7 +93,23 @@
         "GetComboPoints",
         "UnitPowerMax",
         "GetUnitSpeed",
-        "IsFalling"
+        "IsFalling",
+        "IconIntroTracker"
     ],
-    "files.encoding": "utf8"
+    "files.encoding": "utf8",
+    "Lua.runtime.version": "Lua 5.1",
+    "Lua.runtime.builtin": {
+        "basic": "disable",
+        "debug": "disable",
+        "io": "disable",
+        "math": "disable",
+        "os": "disable",
+        "package": "disable",
+        "string": "disable",
+        "table": "disable",
+        "utf8": "disable"
+    },
+    "Lua.workspace.library": [
+        "$USERPROFILE\\.vscode\\extensions\\ketho.wow-api-0.15.7\\Annotations"
+    ]
 }

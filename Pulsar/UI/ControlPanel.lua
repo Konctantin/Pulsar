@@ -160,7 +160,8 @@ function T.CreateControlPanel()
 
     local leftPos = SIZE + 16;
 
-    T.EnabledButton = CreateIconToogledButton("EnabledButton", frame, SIZE, 132376, "Enable Rotation");
+    T.EnabledButton = CreateIconToogledButton("EnabledButton", frame, SIZE, 132376, "Enable Rotationn\nALT-X");
+    SetBindingClick("ALT-X", T.EnabledButton:GetName(), "");
     T.EnabledButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 6;
 
@@ -172,7 +173,8 @@ function T.CreateControlPanel()
     T.KickButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE + 4;
 
-    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 135826, "Enable Cooldowns");
+    T.CDButton = CreateIconToogledButton("CDButton", frame, SIZE, 135826, "Enable Cooldowns\nALT-C");
+    SetBindingClick("ALT-C", T.CDButton:GetName(), "");
     T.CDButton:SetPoint("LEFT", leftPos, 0);
     leftPos = leftPos + SIZE;
 
@@ -185,7 +187,7 @@ function T.CreateControlPanel()
     leftPos = leftPos + SIZE + 4;
 
     frame.MonitorButton = CreateIconButton("MonitorButton", frame, SIZE, 132279, "Open ability monitor");
-    SetBindingClick("SHIFT-T", frame.MonitorButton:GetName(), "");
+    --SetBindingClick("SHIFT-T", frame.MonitorButton:GetName(), "");
     frame.MonitorButton:SetPoint("LEFT", leftPos, 0);
     frame.MonitorButton:SetScript("OnClick", function() print("MonitorButton"); end);
     leftPos = leftPos + SIZE;

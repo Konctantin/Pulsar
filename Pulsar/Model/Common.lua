@@ -2,8 +2,8 @@
 
 local PING = 0.1;
 
-function T.GetUnitBuff(unit, spellId, filter)
-    local spellName, spellRank = GetSpellInfo(spellId);
+function T.GetUnitBuff(unit, spellId, filter, patternName)
+    local spellName = patternName or GetSpellInfo(spellId) or spellId;
     if spellName then
         for i = 1, 80 do
             --    name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId =
@@ -11,7 +11,7 @@ function T.GetUnitBuff(unit, spellId, filter)
             if not name then
                 return false, 0, 0
             end
-            if name == spellName then
+            if (patternName and string.find(name, spellName)) or (name == spellName) then
                 local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
                 return true, count, rem;
             end
@@ -20,15 +20,15 @@ function T.GetUnitBuff(unit, spellId, filter)
     return false, 0, 0;
 end
 
-function T.GetUnitDebuff(unit, spellId, filter)
-    local spellName, spellRank = GetSpellInfo(spellId);
+function T.GetUnitDebuff(unit, spellId, filter, patternName)
+    local spellName = patternName or GetSpellInfo(spellId) or spellId;
     if spellName then
         for i = 1, 80 do
             local name, icon, count, debuffType, duration, expires, unitCaster, canStealOrPurge, _, spellId = UnitDebuff(unit, i, filter);
             if not name then
                 return false, 0, 0;
             end
-            if name == spellName then
+            if (patternName and string.find(name, spellName)) or (name == spellName) then
                 local rem = min(max((expires or 0) - (GetTime() - (PING or 0)), 0), 0xffff);
                 return true, count, rem;
             end

@@ -4,7 +4,7 @@ local T = { Name = "Pulsar tester" };
 loadfile('FakeApi.lua')(T.Name, T);
 loadfile('FakeWowDB.lua')(T.Name, T);
 
-loadfile('Pulsar/Script/Utils.lua')(T.Name, T);
+loadfile('Pulsar/Utils.lua')(T.Name, T);
 loadfile('Pulsar/Script/Defines.lua')(T.Name, T);
 loadfile('Pulsar/Script/Action.lua')(T.Name, T);
 loadfile('Pulsar/Script/Condition.lua')(T.Name, T);

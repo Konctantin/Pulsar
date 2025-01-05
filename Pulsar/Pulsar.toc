@@ -1,4 +1,4 @@
-## Interface: 11501
+## Interface: 11503
 ## Title: Pulsar
 ## Author: Konstatin
 ## Version: 1.0.1
@@ -8,7 +8,6 @@ Utils.lua
 
 Model/Common.lua
 
-Script/Utils.lua
 Script/Defines.lua
 Script/Condition.lua
 Script/Action.lua

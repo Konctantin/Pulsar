@@ -40,14 +40,15 @@ end
 function T.SpellInfo:Update(spellId)
 
     if spellId then
-        self.Id = spellId;
-        self.Name = GetSpellInfo(spellId);
+        local nm,_,icon,_,_,_,id = GetSpellInfo(spellId);
+        self.Id = id or 0;
+        self.Name = nm;
     end
 
     self.IsKnown = false;
     self.BookId = 0;
 
-    if spellId == 0 then
+    if type(spellId) == "number" and spellId == 0 then
         return;
     end
 
@@ -175,16 +176,6 @@ function T.SpellInfo:IsReady()
     end
 
     if self:IsOnCooldown() then
-        return false;
-    end
-
-    local endTime = select(5, UnitCastingInfo("player")) or 0;
-    if (endTime - (GetTime() * 1000)) >= 0.2 then
-        return false;
-    end
-
-    local endTime = select(5, UnitChannelInfo("player")) or 0;
-    if (endTime - (GetTime() * 1000)) >= 0 then
         return false;
     end
 

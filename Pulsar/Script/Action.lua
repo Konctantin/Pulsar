@@ -38,6 +38,10 @@ function T.Action:Call(state)
     end
 
     for _, condition in ipairs(self.Conditions) do
+
+    end
+
+    for _, condition in ipairs(self.Conditions) do
         local check = condition:Call(state);
         if not check then
             return false, nil, nil;

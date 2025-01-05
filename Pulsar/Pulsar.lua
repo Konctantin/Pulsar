@@ -189,6 +189,10 @@ function T.Notify(msg, toChat)
 end
 
 local function InitMainFrame()
+
+    IconIntroTracker.RegisterEvent = function() end
+    IconIntroTracker:UnregisterEvent('SPELL_PUSHED_TO_ACTIONBAR')
+
     local pulsarFrame = CreateFrame("Frame");
 
     pulsarFrame:SetFrameStrata("BACKGROUND");
